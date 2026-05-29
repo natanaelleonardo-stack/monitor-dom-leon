@@ -790,6 +790,11 @@ select option{font-weight:400;color:#1A1210}
   </div>
 </div>
 
+<script>
+// Wrappers globais — chamados pelo HTML antes do module carregar
+function onTipoChange(){ if(window._onTipoChange) window._onTipoChange(); }
+function onPsTipoChange(){ if(window._onPsTipoChange) window._onPsTipoChange(); }
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -1036,7 +1041,7 @@ window.closePopup = () => {
   document.getElementById('popup-rapido').classList.remove('show');
 };
 
-document.getElementById('popup-rapido').addEventListener('click', e => {
+safeOn('popup-rapido','click', e => {
   if(e.target === document.getElementById('popup-rapido')) closePopup();
 });
 
@@ -1056,6 +1061,7 @@ window.selectPsMod = (mod, btn) => {
 };
 
 window.onPsTipoChange = () => { if(psMod !== 'avista') calcPsVenc(); };
+window._onPsTipoChange=window.onPsTipoChange;
 
 function calcPsVenc(){
   const data = document.getElementById('ps-data').value;
@@ -1567,6 +1573,7 @@ function calcVencimento(){
 let sModSelecionada='avista';
 
 window.onTipoChange=()=>{ onTipoChangeRecorrente(); };
+window._onTipoChange=window.onTipoChange;
 
 window.selectSMod=(mod,btn)=>{
   sModSelecionada=mod;
