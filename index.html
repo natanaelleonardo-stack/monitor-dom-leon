@@ -1246,14 +1246,22 @@ window.doLogin=async()=>{
   const err=document.getElementById('login-err');
   const btn=document.getElementById('btn-login');
   if(!email||!pass){err.textContent='Preencha email e senha.';err.className='login-err show';return;}
-  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader" style="animation:spin .8s linear infinite"></i> Entrando...';
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader" style="animation:spin .8s linear infinite"></i> Entrando...';
   try{
-    await signInWithEmailAndPassword(auth,email,pass);
+    const result = await signInWithEmailAndPassword(auth,email,pass);
+    console.log('Login OK:', result.user.email);
   }catch(e){
+    console.error('Erro login:', e.code, e.message);
     let msg='Email ou senha incorretos.';
-    if(e.code==='auth/too-many-requests')msg='Muitas tentativas. Tente mais tarde.';
-    err.textContent=msg;err.className='login-err show';
-    btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Entrar';
+    if(e.code==='auth/too-many-requests') msg='Muitas tentativas. Tente mais tarde.';
+    if(e.code==='auth/network-request-failed') msg='Erro de conexão. Verifique a internet.';
+    if(e.code==='auth/invalid-api-key') msg='Erro de configuração do sistema.';
+    if(e.code==='auth/unauthorized-domain') msg='Domínio não autorizado no Firebase. Contate o administrador.';
+    err.textContent=msg+' ('+e.code+')';
+    err.className='login-err show';
+    btn.disabled=false;
+    btn.innerHTML='<i class="ti ti-login"></i> Entrar';
   }
 };
 
