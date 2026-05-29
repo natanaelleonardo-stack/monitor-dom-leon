@@ -448,6 +448,15 @@ select option{font-weight:400;color:#1A1210}
             <input type="date" id="ps-venc">
           </div>
         </div>
+        <div id="ps-recorrente-wrap" style="display:none;margin-top:10px;padding:10px;background:var(--br-xl);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:600;color:var(--warn);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px"><i class="ti ti-refresh" style="font-size:12px"></i> Despesa recorrente — repetir por quantos meses?</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px" id="ps-meses-btns">
+            <button class="p-mod" onclick="selectPsMeses(1,this)">1</button>
+            <button class="p-mod on" onclick="selectPsMeses(6,this)">6</button>
+            <button class="p-mod" onclick="selectPsMeses(12,this)">12</button>
+          </div>
+          <input type="number" id="ps-meses-input" placeholder="Ou digite a quantidade..." min="1" max="60" style="font-family:'Inter',sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;width:100%">
+        </div>
       </div>
       <div class="popup-footer">
         <button class="popup-confirm" id="btn-ps" onclick="savePopupSaida()"><i class="ti ti-check"></i> Confirmar saída</button>
@@ -1054,6 +1063,15 @@ saveEstender = async() => {
 
 // ── POPUP LANÇAMENTO RÁPIDO ───────────────────────────────
 let psMod = 'avista';
+let psMesesSelecionados = 6;
+
+selectPsMeses = (n, btn) => {
+  psMesesSelecionados = n;
+  document.querySelectorAll('#ps-meses-btns .p-mod').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('ps-meses-input').value = '';
+};
+window.selectPsMeses_fn = selectPsMeses;
 
 openPopup = () => {
   const hj = new Date().toISOString().slice(0,10);
@@ -1085,8 +1103,20 @@ selectPsMod = (mod, btn) => {
   if(mod !== 'avista') calcPsVenc();
 };
 
-onPsTipoChange = () => { if(psMod !== 'avista') calcPsVenc(); };
-_onPsTipoChange=window.onPsTipoChange;
+onPsTipoChange = () => {
+  if(psMod !== 'avista') calcPsVenc();
+  // Detectar Op. Fixas / Pessoal no popup
+  const raw = document.getElementById('ps-tipo').value;
+  const grupo = raw ? raw.split('|')[2]||'' : '';
+  const wrap = document.getElementById('ps-recorrente-wrap');
+  if(wrap){
+    if(GRUPOS_RECORRENTES.includes(grupo)){
+      wrap.style.display='block';
+    } else {
+      wrap.style.display='none';
+    }
+  }
+};
 
 function calcPsVenc(){
   const data = document.getElementById('ps-data').value;
@@ -1115,21 +1145,34 @@ savePopupSaida = async() => {
   const[tipo,tagcls,grupo] = raw.split('|');
   setSyncStatus('loading');
   document.getElementById('btn-ps').disabled = true;
-  await addDoc(collection(db,'saidas'),{data,tipo,tagcls,grupo,valor,descricao});
-  if(psMod !== 'avista'){
-    const vencimento = document.getElementById('ps-venc').value;
-    if(vencimento){
-      await addDoc(collection(db,'contas'),{
-        descricao:descricao||tipo, categoria:grupo+'|'+tagcls,
-        valor, compra:data, vencimento, modalidade:psMod,
-        status:'pendente', obs:''
-      });
+
+  const isRec = GRUPOS_RECORRENTES.includes(grupo);
+  const psInputMeses = parseInt(document.getElementById('ps-meses-input')?.value)||0;
+  const meses = isRec ? (psInputMeses || psMesesSelecionados || 1) : 1;
+  const recId = isRec ? ('rec_'+Date.now()) : null;
+  const[dy,dm,dd] = data.split('-');
+
+  for(let i=0;i<meses;i++){
+    let nm=parseInt(dm)+i; let ny=parseInt(dy);
+    while(nm>12){nm-=12;ny++;}
+    const dataI = ny+'-'+String(nm).padStart(2,'0')+'-'+dd;
+    const saida = {data:dataI,tipo,tagcls,grupo,valor,descricao,modalidade:psMod};
+    if(recId) saida.recorrente_id = recId;
+    await addDoc(collection(db,'saidas'),saida);
+    if(psMod !== 'avista'){
+      const vencimento = i===0 ? document.getElementById('ps-venc').value : calcVencAuto(dataI,psMod);
+      if(vencimento){
+        const conta = {descricao:descricao||tipo,categoria:grupo+'|'+tagcls,valor,compra:dataI,vencimento,modalidade:psMod,status:'pendente',obs:''};
+        if(recId) conta.recorrente_id = recId;
+        await addDoc(collection(db,'contas'),conta);
+      }
     }
   }
+
   document.getElementById('btn-ps').disabled = false;
   clearPopupSaida();
   closePopup();
-  toast(psMod==='avista'?'Saída registrada!':'Saída e conta a pagar registradas!');
+  toast(meses>1?meses+' meses lançados!':psMod==='avista'?'Saída registrada!':'Saída e conta a pagar registradas!');
 };
 
 savePopupEntrada = async() => {
@@ -1154,10 +1197,15 @@ clearPopupSaida = () => {
   document.getElementById('ps-valor').value = '';
   document.getElementById('ps-desc').value = '';
   document.getElementById('ps-venc').value = '';
+  const psMesInp = document.getElementById('ps-meses-input');
+  if(psMesInp) psMesInp.value = '';
   psMod = 'avista';
+  psMesesSelecionados = 6;
   document.querySelectorAll('#ps-mod-row .p-mod').forEach(b=>b.classList.remove('on'));
   document.querySelector('#ps-mod-row .p-mod').classList.add('on');
   document.getElementById('ps-venc-row').style.display = 'none';
+  const psRec = document.getElementById('ps-recorrente-wrap');
+  if(psRec) psRec.style.display = 'none';
 };
 
 clearPopupEntrada = () => {
@@ -1568,7 +1616,6 @@ showContasView=(view,btn)=>{
 let sModSelecionada='avista';
 
 onTipoChange=()=>{ onTipoChangeRecorrente(); };
-_onTipoChange=window.onTipoChange;
 
 selectSMod=(mod,btn)=>{
   sModSelecionada=mod;
