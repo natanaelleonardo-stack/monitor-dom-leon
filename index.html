@@ -939,13 +939,6 @@ window.selectMeses = (n, btn) => {
   document.getElementById('meses-input').value = '';
 };
 
-document.getElementById('meses-input').addEventListener('input', e => {
-  const v = parseInt(e.target.value)||0;
-  if(v>0){
-    mesesSelecionados = v;
-    document.querySelectorAll('#meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
-  }
-});
 
 function onTipoChangeRecorrente(){
   const raw = document.getElementById('s-tipo').value;
@@ -992,10 +985,6 @@ window.selectEstMeses = (n, btn) => {
   document.getElementById('est-meses-input').value = '';
 };
 
-document.getElementById('est-meses-input').addEventListener('input', e => {
-  const v = parseInt(e.target.value)||0;
-  if(v>0){ estMesesSel=v; document.querySelectorAll('#est-meses-btns .mes-btn').forEach(b=>b.classList.remove('on')); }
-});
 
 window.saveEstender = async() => {
   const meses = estMesesSel || parseInt(document.getElementById('est-meses-input').value)||0;
@@ -1085,7 +1074,6 @@ function calcPsVenc(){
   if(venc) document.getElementById('ps-venc').value = venc;
 }
 
-document.getElementById('ps-data').addEventListener('change', calcPsVenc);
 
 window.savePopupSaida = async() => {
   const data = document.getElementById('ps-data').value;
@@ -1149,10 +1137,11 @@ window.clearPopupEntrada = () => {
 };
 
 ['pe-prazo','pe-cortesia','pe-credito','pe-debito','pe-dinheiro','pe-pix'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',()=>{
+  safeOn(id,'input',()=>{
     const ids=['pe-prazo','pe-cortesia','pe-credito','pe-debito','pe-dinheiro','pe-pix'];
     const tot=ids.reduce((a,i)=>a+R(parseFloat(document.getElementById(i).value)||0),0);
-    document.getElementById('pe-preview').textContent=tot>0?'Total: '+brl(tot):'';
+    const el=document.getElementById('pe-preview');
+    if(el)el.textContent=tot>0?'Total: '+brl(tot):'';
   });
 });
 
@@ -1168,6 +1157,28 @@ window.toggleSenha = () => {
     icon.className = 'ti ti-eye';
   }
 };
+
+
+// Listeners seguros — só adiciona se elemento existir
+function safeOn(id, evt, fn){
+  const el = document.getElementById(id);
+  if(el) el.addEventListener(evt, fn);
+}
+
+safeOn('cp-compra', 'change', calcVencimento);
+safeOn('meses-input', 'input', e => {
+  const v = parseInt(e.target.value)||0;
+  if(v>0){
+    mesesSelecionados = v;
+    document.querySelectorAll('#meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
+  }
+});
+safeOn('est-meses-input', 'input', e => {
+  const v = parseInt(e.target.value)||0;
+  if(v>0){ estMesesSel=v; document.querySelectorAll('#est-meses-btns .mes-btn').forEach(b=>b.classList.remove('on')); }
+});
+safeOn('s-data', 'change', calcSVencimento);
+safeOn('ps-data', 'change', calcPsVenc);
 
 // ── AUTH ─────────────────────────────────────────────────
 function showView(v){
@@ -1220,8 +1231,8 @@ window.doLogout=async()=>{
 window.showView=showView;
 
 // Enter para logar
-document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
-document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
+safeOn('login-pass','keydown',e=>{if(e.key==='Enter')window.doLogin();});
+safeOn('login-email','keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
 
 onAuthStateChanged(auth, user=>{
   if(user){
@@ -1551,7 +1562,6 @@ function calcVencimento(){
   if(venc)document.getElementById('cp-venc').value=venc;
 }
 
-document.getElementById('cp-compra').addEventListener('change',calcVencimento);
 
 // ── FORMULÁRIO UNIFICADO ─────────────────────────────────
 let sModSelecionada='avista';
@@ -1585,7 +1595,6 @@ function calcSVencimento(){
   if(venc)document.getElementById('s-venc').value=venc;
 }
 
-document.getElementById('s-data').addEventListener('change', calcSVencimento);
 
 window.saveSaidaUnificada=async()=>{
   const data=document.getElementById('s-data').value;
@@ -1716,10 +1725,11 @@ window.clearEntrada=()=>{
 };
 
 ['e-prazo','e-cortesia','e-credito','e-debito','e-dinheiro','e-pix'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',()=>{
+  safeOn(id,'input',()=>{
     const ids=['e-prazo','e-cortesia','e-credito','e-debito','e-dinheiro','e-pix'];
     const tot=ids.reduce((a,i)=>a+R(parseFloat(document.getElementById(i).value)||0),0);
-    document.getElementById('e-preview').textContent=tot>0?'Total: '+brl(tot):'';
+    const el=document.getElementById('e-preview');
+    if(el)el.textContent=tot>0?'Total: '+brl(tot):'';
   });
 });
 
