@@ -791,9 +791,54 @@ select option{font-weight:400;color:#1A1210}
 </div>
 
 <script>
-// Wrappers globais — chamados pelo HTML antes do module carregar
-function onTipoChange(){ if(window._onTipoChange) window._onTipoChange(); }
-function onPsTipoChange(){ if(window._onPsTipoChange) window._onPsTipoChange(); }
+// Wrappers globais — todas as funções chamadas pelo HTML via onclick/onchange
+// O module JS tem escopo isolado, então precisamos de proxies no window global
+const _wrap = name => function(){ 
+  if(window[name]) return window[name](...arguments);
+};
+// Login
+window.doLogin    = _wrap('doLogin');
+window.doReset    = _wrap('doReset');
+window.doLogout   = _wrap('doLogout');
+window.toggleSenha= _wrap('toggleSenha');
+window.showView   = _wrap('showView');
+// Navegação
+window.nav        = _wrap('nav');
+// Saúde / mês
+window.navMes     = _wrap('navMes');
+// Popup rápido
+window.openPopup        = _wrap('openPopup');
+window.closePopup       = _wrap('closePopup');
+window.switchPopupTab   = _wrap('switchPopupTab');
+window.selectPsMod      = _wrap('selectPsMod');
+window.onPsTipoChange   = _wrap('onPsTipoChange');
+window.savePopupSaida   = _wrap('savePopupSaida');
+window.savePopupEntrada = _wrap('savePopupEntrada');
+window.clearPopupSaida  = _wrap('clearPopupSaida');
+window.clearPopupEntrada= _wrap('clearPopupEntrada');
+// Formulários lançar
+window.onTipoChange       = _wrap('onTipoChange');
+window.selectSMod         = _wrap('selectSMod');
+window.saveSaidaUnificada = _wrap('saveSaidaUnificada');
+window.clearSaidaUnificada= _wrap('clearSaidaUnificada');
+window.saveEntrada        = _wrap('saveEntrada');
+window.clearEntrada       = _wrap('clearEntrada');
+window.saveMeta           = _wrap('saveMeta');
+// Meses recorrentes
+window.selectMeses    = _wrap('selectMeses');
+// Modal estender
+window.abrirEstender      = _wrap('abrirEstender');
+window.closeModalEstender = _wrap('closeModalEstender');
+window.selectEstMeses     = _wrap('selectEstMeses');
+window.saveEstender       = _wrap('saveEstender');
+// Contas a pagar
+window.showContasView = _wrap('showContasView');
+window._pagarConta    = _wrap('_pagarConta');
+window._pagarFatura   = _wrap('_pagarFatura');
+window._delConta      = _wrap('_delConta');
+window._delSaida      = _wrap('_delSaida');
+// Meta
+window.saveMeta = _wrap('saveMeta');
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
