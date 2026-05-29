@@ -9,6 +9,31 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+// Compat aliases
+const firebaseApp = { initializeApp: firebase.initializeApp.bind(firebase) };
+const firebaseFirestore = {
+  getFirestore: (app) => app.firestore(),
+  collection: (db, col) => db.collection(col),
+  doc: (db, col, id) => db.collection(col).doc(id),
+  setDoc: (ref, data) => ref.set(data),
+  addDoc: (ref, data) => ref.add(data),
+  deleteDoc: (ref) => ref.delete(),
+  updateDoc: (ref, data) => ref.update(data),
+  onSnapshot: (ref, cb, err) => ref.onSnapshot(cb, err)
+};
+const firebaseAuth = {
+  getAuth: (app) => app.auth(),
+  signInWithEmailAndPassword: (auth, email, pass) => auth.signInWithEmailAndPassword(email, pass),
+  signOut: (auth) => auth.signOut(),
+  sendPasswordResetEmail: (auth, email) => auth.sendPasswordResetEmail(email),
+  onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb)
+};
+</script>
+
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -791,47 +816,14 @@ select option{font-weight:400;color:#1A1210}
 </div>
 
 <script>
-// Namespace separado para funções do módulo — evita conflito com window
-window._fns = {};
-// Proxies seguros — chamam _fns.X quando disponível
-function doLogin(){ if(window._fns.doLogin) window._fns.doLogin(); }
-function doReset(){ if(window._fns.doReset) window._fns.doReset(); }
-function doLogout(){ if(window._fns.doLogout) window._fns.doLogout(); }
-function toggleSenha(){ if(window._fns.toggleSenha) window._fns.toggleSenha(); }
-function showView(v){ if(window._fns.showView) window._fns.showView(v); }
-function nav(id,btn){ if(window._fns.nav) window._fns.nav(id,btn); }
-function navMes(d){ if(window._fns.navMes) window._fns.navMes(d); }
-function openPopup(){ if(window._fns.openPopup) window._fns.openPopup(); }
-function closePopup(){ if(window._fns.closePopup) window._fns.closePopup(); }
-function switchPopupTab(t){ if(window._fns.switchPopupTab) window._fns.switchPopupTab(t); }
-function selectPsMod(m,b){ if(window._fns.selectPsMod) window._fns.selectPsMod(m,b); }
-function onPsTipoChange(){ if(window._fns.onPsTipoChange) window._fns.onPsTipoChange(); }
-function savePopupSaida(){ if(window._fns.savePopupSaida) window._fns.savePopupSaida(); }
-function savePopupEntrada(){ if(window._fns.savePopupEntrada) window._fns.savePopupEntrada(); }
-function clearPopupSaida(){ if(window._fns.clearPopupSaida) window._fns.clearPopupSaida(); }
-function clearPopupEntrada(){ if(window._fns.clearPopupEntrada) window._fns.clearPopupEntrada(); }
-function onTipoChange(){ if(window._fns.onTipoChange) window._fns.onTipoChange(); }
-function selectSMod(m,b){ if(window._fns.selectSMod) window._fns.selectSMod(m,b); }
-function saveSaidaUnificada(){ if(window._fns.saveSaidaUnificada) window._fns.saveSaidaUnificada(); }
-function clearSaidaUnificada(){ if(window._fns.clearSaidaUnificada) window._fns.clearSaidaUnificada(); }
-function saveEntrada(){ if(window._fns.saveEntrada) window._fns.saveEntrada(); }
-function clearEntrada(){ if(window._fns.clearEntrada) window._fns.clearEntrada(); }
-function saveMeta(){ if(window._fns.saveMeta) window._fns.saveMeta(); }
-function selectMeses(n,b){ if(window._fns.selectMeses) window._fns.selectMeses(n,b); }
-function abrirEstender(id){ if(window._fns.abrirEstender) window._fns.abrirEstender(id); }
-function closeModalEstender(){ if(window._fns.closeModalEstender) window._fns.closeModalEstender(); }
-function selectEstMeses(n,b){ if(window._fns.selectEstMeses) window._fns.selectEstMeses(n,b); }
-function saveEstender(){ if(window._fns.saveEstender) window._fns.saveEstender(); }
-function showContasView(v,b){ if(window._fns.showContasView) window._fns.showContasView(v,b); }
-function _pagarConta(id){ if(window._fns._pagarConta) window._fns._pagarConta(id); }
-function _pagarFatura(c,m){ if(window._fns._pagarFatura) window._fns._pagarFatura(c,m); }
-function _delConta(id){ if(window._fns._delConta) window._fns._delConta(id); }
-function _delSaida(id){ if(window._fns._delSaida) window._fns._delSaida(id); }
-</script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+function safeOn(id, evt, fn){
+  const el = document.getElementById(id);
+  if(el) el.addEventListener(evt, fn);
+}
+
+const { initializeApp } = firebaseApp;
+const { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } = firebaseFirestore;
+const { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } = firebaseAuth;
 
 const firebaseConfig = {
   apiKey: "AIzaSyC2ki-hUKAzEIxsvMUAqR19yvJ0D7GCq7w",
@@ -922,7 +914,7 @@ function atualizaLabelMes(){
   });
 }
 
-window._fns.navMes = (dir) => {
+navMes = (dir) => {
   const[y,m] = mesFiltro.split('-');
   let nm = parseInt(m) + dir;
   let ny = parseInt(y);
@@ -970,7 +962,7 @@ let mesesSelecionados = 6;
 let estMesesSel = 0;
 let estRecorrenteId = null;
 
-window._fns.selectMeses = (n, btn) => {
+selectMeses = (n, btn) => {
   mesesSelecionados = n;
   document.querySelectorAll('#meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -992,7 +984,7 @@ function onTipoChangeRecorrente(){
 // ═══════════════════════════════════════════════════════════
 // MODAL ESTENDER RECORRENTE
 // ═══════════════════════════════════════════════════════════
-window._fns.abrirEstender = (recId) => {
+abrirEstender = (recId) => {
   estRecorrenteId = recId;
   const saidas = ST.saidas.filter(s=>s.recorrente_id===recId).sort((a,b)=>a.data.localeCompare(b.data));
   if(!saidas.length) return;
@@ -1012,11 +1004,11 @@ window._fns.abrirEstender = (recId) => {
   document.getElementById('modal-estender').classList.add('show');
 };
 
-window._fns.closeModalEstender = () => {
+closeModalEstender = () => {
   document.getElementById('modal-estender').classList.remove('show');
 };
 
-window._fns.selectEstMeses = (n, btn) => {
+selectEstMeses = (n, btn) => {
   estMesesSel = n;
   document.querySelectorAll('#est-meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -1024,7 +1016,7 @@ window._fns.selectEstMeses = (n, btn) => {
 };
 
 
-window._fns.saveEstender = async() => {
+saveEstender = async() => {
   const meses = estMesesSel || parseInt(document.getElementById('est-meses-input').value)||0;
   if(!meses||meses<1){toast('Informe quantos meses adicionar.',true);return;}
   const tipo = document.getElementById('est-tipo').value;
@@ -1063,14 +1055,14 @@ window._fns.saveEstender = async() => {
 // ── POPUP LANÇAMENTO RÁPIDO ───────────────────────────────
 let psMod = 'avista';
 
-window._fns.openPopup = () => {
+openPopup = () => {
   const hj = new Date().toISOString().slice(0,10);
   document.getElementById('ps-data').value = hj;
   document.getElementById('pe-data').value = hj;
   document.getElementById('popup-rapido').classList.add('show');
 };
 
-window._fns.closePopup = () => {
+closePopup = () => {
   document.getElementById('popup-rapido').classList.remove('show');
 };
 
@@ -1078,14 +1070,14 @@ safeOn('popup-rapido','click', e => {
   if(e.target === document.getElementById('popup-rapido')) closePopup();
 });
 
-window._fns.switchPopupTab = (tab) => {
+switchPopupTab = (tab) => {
   document.getElementById('popup-saida-body').style.display = tab==='saida'?'block':'none';
   document.getElementById('popup-entrada-body').style.display = tab==='entrada'?'block':'none';
   document.getElementById('ptab-saida').className = 'ptab' + (tab==='saida'?' on':'');
   document.getElementById('ptab-entrada').className = 'ptab' + (tab==='entrada'?' on':'');
 };
 
-window._fns.selectPsMod = (mod, btn) => {
+selectPsMod = (mod, btn) => {
   psMod = mod;
   document.querySelectorAll('#ps-mod-row .p-mod').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -1093,8 +1085,8 @@ window._fns.selectPsMod = (mod, btn) => {
   if(mod !== 'avista') calcPsVenc();
 };
 
-window._fns.onPsTipoChange = () => { if(psMod !== 'avista') calcPsVenc(); };
-window._fns._onPsTipoChange=window.onPsTipoChange;
+onPsTipoChange = () => { if(psMod !== 'avista') calcPsVenc(); };
+_onPsTipoChange=window.onPsTipoChange;
 
 function calcPsVenc(){
   const data = document.getElementById('ps-data').value;
@@ -1114,7 +1106,7 @@ function calcPsVenc(){
 }
 
 
-window._fns.savePopupSaida = async() => {
+savePopupSaida = async() => {
   const data = document.getElementById('ps-data').value;
   const raw = document.getElementById('ps-tipo').value;
   const valor = R(parseFloat(document.getElementById('ps-valor').value)||0);
@@ -1140,7 +1132,7 @@ window._fns.savePopupSaida = async() => {
   toast(psMod==='avista'?'Saída registrada!':'Saída e conta a pagar registradas!');
 };
 
-window._fns.savePopupEntrada = async() => {
+savePopupEntrada = async() => {
   const d = document.getElementById('pe-data').value;
   if(!d){toast('Informe a data.',true);return;}
   const campos = ['prazo','cortesia','credito','debito','dinheiro','pix'];
@@ -1155,7 +1147,7 @@ window._fns.savePopupEntrada = async() => {
   toast('Entrada salva!');
 };
 
-window._fns.clearPopupSaida = () => {
+clearPopupSaida = () => {
   const hj = new Date().toISOString().slice(0,10);
   document.getElementById('ps-data').value = hj;
   document.getElementById('ps-tipo').value = '';
@@ -1168,7 +1160,7 @@ window._fns.clearPopupSaida = () => {
   document.getElementById('ps-venc-row').style.display = 'none';
 };
 
-window._fns.clearPopupEntrada = () => {
+clearPopupEntrada = () => {
   const hj = new Date().toISOString().slice(0,10);
   document.getElementById('pe-data').value = hj;
   ['pe-prazo','pe-cortesia','pe-credito','pe-debito','pe-dinheiro','pe-pix'].forEach(id=>document.getElementById(id).value='');
@@ -1185,7 +1177,7 @@ window._fns.clearPopupEntrada = () => {
 });
 
 // ── EXIBIR/OCULTAR SENHA ──────────────────────────────────
-window._fns.toggleSenha = () => {
+toggleSenha = () => {
   const input = document.getElementById('login-pass');
   const icon = document.getElementById('senha-icon');
   if(input.type === 'password'){
@@ -1198,26 +1190,6 @@ window._fns.toggleSenha = () => {
 };
 
 
-// Listeners seguros — só adiciona se elemento existir
-function safeOn(id, evt, fn){
-  const el = document.getElementById(id);
-  if(el) el.addEventListener(evt, fn);
-}
-
-safeOn('cp-compra', 'change', calcVencimento);
-safeOn('meses-input', 'input', e => {
-  const v = parseInt(e.target.value)||0;
-  if(v>0){
-    mesesSelecionados = v;
-    document.querySelectorAll('#meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
-  }
-});
-safeOn('est-meses-input', 'input', e => {
-  const v = parseInt(e.target.value)||0;
-  if(v>0){ estMesesSel=v; document.querySelectorAll('#est-meses-btns .mes-btn').forEach(b=>b.classList.remove('on')); }
-});
-safeOn('s-data', 'change', calcSVencimento);
-safeOn('ps-data', 'change', calcPsVenc);
 
 // ── AUTH ─────────────────────────────────────────────────
 function showView(v){
@@ -1228,7 +1200,7 @@ function showView(v){
   document.getElementById('reset-ok').className='login-ok';
 }
 
-window._fns.doLogin=async()=>{
+doLogin=async()=>{
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   const err=document.getElementById('login-err');
@@ -1253,7 +1225,7 @@ window._fns.doLogin=async()=>{
   }
 };
 
-window._fns.doReset=async()=>{
+doReset=async()=>{
   const email=document.getElementById('reset-email').value.trim();
   const err=document.getElementById('reset-err');
   const ok=document.getElementById('reset-ok');
@@ -1270,12 +1242,12 @@ window._fns.doReset=async()=>{
   btn.disabled=false;
 };
 
-window._fns.doLogout=async()=>{
+doLogout=async()=>{
   if(!confirm('Deseja sair do monitor?'))return;
   await signOut(auth);
 };
 
-window._fns.showView=showView;
+showView=showView;
 
 // Enter para logar
 safeOn('login-pass','keydown',e=>{if(e.key==='Enter')window.doLogin();});
@@ -1573,7 +1545,7 @@ function renderContas(){
 function renderAll(){renderSaude();renderEntradas();renderSaidas();renderMeta();renderContas();}
 
 // ── NAV ──────────────────────────────────────────────────
-window._fns.nav=(id,btn)=>{
+nav=(id,btn)=>{
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   document.getElementById('pnl-'+id).classList.add('on');
@@ -1581,7 +1553,7 @@ window._fns.nav=(id,btn)=>{
   renderAll();
 };
 
-window._fns.showContasView=(view,btn)=>{
+showContasView=(view,btn)=>{
   document.querySelectorAll('.fatura-tabs .ftab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('cv-vencimentos').style.display=view==='vencimentos'?'block':'none';
@@ -1595,10 +1567,10 @@ window._fns.showContasView=(view,btn)=>{
 // ── FORMULÁRIO UNIFICADO ─────────────────────────────────
 let sModSelecionada='avista';
 
-window._fns.onTipoChange=()=>{ onTipoChangeRecorrente(); };
-window._fns._onTipoChange=window.onTipoChange;
+onTipoChange=()=>{ onTipoChangeRecorrente(); };
+_onTipoChange=window.onTipoChange;
 
-window._fns.selectSMod=(mod,btn)=>{
+selectSMod=(mod,btn)=>{
   sModSelecionada=mod;
   document.querySelectorAll('#s-mod-row .mod-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -1626,7 +1598,7 @@ function calcSVencimento(){
 }
 
 
-window._fns.saveSaidaUnificada=async()=>{
+saveSaidaUnificada=async()=>{
   const data=document.getElementById('s-data').value;
   const raw=document.getElementById('s-tipo').value;
   const valor=R(parseFloat(document.getElementById('s-valor').value)||0);
@@ -1676,7 +1648,7 @@ function calcVencAuto(data,mod){
   return '';
 }
 
-window._fns.clearSaidaUnificada=()=>{
+clearSaidaUnificada=()=>{
   const hj=new Date().toISOString().slice(0,10);
   document.getElementById('s-data').value=hj;
   document.getElementById('s-tipo').value='';
@@ -1692,7 +1664,7 @@ window._fns.clearSaidaUnificada=()=>{
 };
 
 // ── AÇÕES ─────────────────────────────────────────────────
-window._fns.saveEntrada=async()=>{
+saveEntrada=async()=>{
   const d=document.getElementById('e-data').value;
   if(!d){toast('Informe a data.',true);return;}
   const fields=['prazo','cortesia','credito','debito','dinheiro','pix'];
@@ -1705,7 +1677,7 @@ window._fns.saveEntrada=async()=>{
   clearEntrada();toast('Entrada salva!');
 };
 
-window._fns.saveMeta=async()=>{
+saveMeta=async()=>{
   const d=document.getElementById('m-data').value;
   const v=R(parseFloat(document.getElementById('m-val').value)||0);
   if(!d||v<=0){toast('Informe data e valor.',true);return;}
@@ -1717,14 +1689,14 @@ window._fns.saveMeta=async()=>{
   toast('Meta salva!');
 };
 
-window._fns._pagarConta=async(id)=>{
+_pagarConta=async(id)=>{
   const td=today();
   setSyncStatus('loading');
   await updateDoc(doc(db,'contas',id),{status:'pago',dataPagamento:td});
   toast('Conta marcada como paga!');
 };
 
-window._fns._pagarFatura=async(cartao,mes)=>{
+_pagarFatura=async(cartao,mes)=>{
   setSyncStatus('loading');
   const compras=ST.contas.filter(c=>c.modalidade===cartao&&c.compra&&c.compra.startsWith(mes));
   for(const c of compras){
@@ -1733,21 +1705,21 @@ window._fns._pagarFatura=async(cartao,mes)=>{
   toast('Fatura marcada como paga!');
 };
 
-window._fns._delConta=async(id)=>{
+_delConta=async(id)=>{
   if(!confirm('Remover este lançamento?'))return;
   setSyncStatus('loading');
   await deleteDoc(doc(db,'contas',id));
   toast('Removido.');
 };
 
-window._fns._delSaida=async(id)=>{
+_delSaida=async(id)=>{
   if(!confirm('Remover esta saída?'))return;
   setSyncStatus('loading');
   await deleteDoc(doc(db,'saidas',id));
   toast('Saída removida.');
 };
 
-window._fns.clearEntrada=()=>{
+clearEntrada=()=>{
   const hj=new Date().toISOString().slice(0,10);
   document.getElementById('e-data').value=hj;
   ['e-prazo','e-cortesia','e-credito','e-debito','e-dinheiro','e-pix'].forEach(id=>document.getElementById(id).value='');
