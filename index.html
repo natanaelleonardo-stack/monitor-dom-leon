@@ -831,7 +831,7 @@ const METAS_MAIO={
 let ST={entradas:[],saidas:[],metas:[],contas:[]};
 let charts={};
 let dbReady=false;
-let modSelecionada='';
+// modSelecionada removida
 
 const R=(v,d=2)=>parseFloat((v||0).toFixed(d));
 function brl(v){return'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
@@ -1543,30 +1543,7 @@ window.showContasView=(view,btn)=>{
   document.getElementById('cv-amex').style.display=view==='amex'?'block':'none';
 };
 
-// ── MODALIDADE ───────────────────────────────────────────
-window.selectMod=(mod,btn)=>{
-  modSelecionada=mod;
-  document.querySelectorAll('.mod-btn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  calcVencimento();
-};
-
-function calcVencimento(){
-  const compra=document.getElementById('cp-compra').value;
-  if(!compra||!modSelecionada)return;
-  let venc='';
-  if(modSelecionada==='prazo7')venc=addDays(compra,7);
-  else if(modSelecionada==='prazo14')venc=addDays(compra,14);
-  else if(modSelecionada==='prazo30')venc=addDays(compra,30);
-  else if(modSelecionada==='santander'||modSelecionada==='amex'){
-    const[y,m]=compra.split('-');
-    const vm=parseInt(m)+1>12?1:parseInt(m)+1;
-    const vy=parseInt(m)+1>12?parseInt(y)+1:parseInt(y);
-    const dia=modSelecionada==='santander'?6:18;
-    venc=vy+'-'+String(vm).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
-  }
-  if(venc)document.getElementById('cp-venc').value=venc;
-}
+// selectMod e calcVencimento removidos — formulário antigo
 
 
 // ── FORMULÁRIO UNIFICADO ─────────────────────────────────
