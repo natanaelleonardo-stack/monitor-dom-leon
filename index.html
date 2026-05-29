@@ -347,6 +347,10 @@ select option{font-weight:400;color:#1A1210}
   thead th{padding:8px 8px;font-size:9px}
   tbody td{padding:8px 8px}
 }
+
+.cp-form-section{background:var(--warn-l);border:1px solid #E8C87A;border-radius:12px;padding:20px;margin-bottom:16px}
+.cp-form-title{font-size:12px;font-weight:600;color:var(--warn);text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.cp-form-title i{font-size:16px}
 </style>
 </head>
 <body>
@@ -864,6 +868,91 @@ select option{font-weight:400;color:#1A1210}
         <button class="fbtn" onclick="clearSaidaUnificada()">Limpar</button>
       </div>
     </div>
+
+    <!-- NOVA CONTA A PAGAR -->
+    <div class="cp-form-section">
+      <div class="cp-form-title"><i class="ti ti-calendar-due"></i> Nova conta a pagar</div>
+      <div class="frow">
+        <div class="fg"><label>Data</label><input type="date" id="cp-data"></div>
+        <div class="fg"><label>Tipo de despesa</label>
+          <select id="cp-tipo" onchange="onCpTipoChange()">
+            <option value="">Selecione...</option>
+            <optgroup label="Op. Fixas">
+              <option value="Aluguel|op|Despesas Operacionais (Fixas)">Aluguel</option>
+              <option value="Acordos|op|Despesas Operacionais (Fixas)">Acordos</option>
+              <option value="Água|op|Despesas Operacionais (Fixas)">Água</option>
+              <option value="Energia|op|Despesas Operacionais (Fixas)">Energia</option>
+              <option value="Internet (operacional)|op|Despesas Operacionais (Fixas)">Internet (operacional)</option>
+            </optgroup>
+            <optgroup label="Pessoal">
+              <option value="Folha de Pagamento|pess|Despesas com Pessoal">Folha de Pagamento</option>
+              <option value="Encargos|pess|Despesas com Pessoal">Encargos</option>
+              <option value="Benefícios|pess|Despesas com Pessoal">Benefícios</option>
+            </optgroup>
+            <optgroup label="Mercadoria">
+              <option value="Compras de Insumos e Produtos|merc|Custos de Mercadoria (Variáveis)">Compras de Insumos e Produtos</option>
+            </optgroup>
+            <optgroup label="Manutenção">
+              <option value="Manutenção Preventiva/Corretiva|man|Despesas de Manutenção">Manutenção Preventiva/Corretiva</option>
+              <option value="Material de Limpeza e Higiene|man|Despesas de Manutenção">Material de Limpeza e Higiene</option>
+              <option value="Utensílios e Móveis|man|Despesas de Manutenção">Utensílios e Móveis</option>
+            </optgroup>
+            <optgroup label="Vendas e Marketing">
+              <option value="Embalagens|vend|Despesas de Vendas e Marketing">Embalagens</option>
+              <option value="Taxas de Cartão/Aplicativos|vend|Despesas de Vendas e Marketing">Taxas de Cartão/Aplicativos</option>
+              <option value="Marketing/Divulgação|vend|Despesas de Vendas e Marketing">Marketing/Divulgação</option>
+            </optgroup>
+            <optgroup label="Adm. Fixas">
+              <option value="Contabilidade|adm|Despesas Administrativas e Fixas">Contabilidade</option>
+              <option value="Softwares/Sistemas|adm|Despesas Administrativas e Fixas">Softwares/Sistemas</option>
+              <option value="Internet e Telefone|adm|Despesas Administrativas e Fixas">Internet e Telefone</option>
+              <option value="Seguros e Segurança|adm|Despesas Administrativas e Fixas">Seguros e Segurança</option>
+            </optgroup>
+            <optgroup label="Impostos">
+              <option value="DAS/Simples Nacional|imp|Impostos e Encargos">DAS/Simples Nacional</option>
+              <option value="Encargos Sociais|imp|Impostos e Encargos">Encargos Sociais</option>
+              <option value="Tarifas Bancárias|imp|Impostos e Encargos">Tarifas Bancárias</option>
+            </optgroup>
+            <optgroup label="Logística">
+              <option value="Combustível e Manutenção de Veículo|log|Logística">Combustível e Manutenção de Veículo</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="fg"><label>Valor (R$)</label><input type="number" id="cp-valor" placeholder="0,00" step="0.01"></div>
+        <div class="fg"><label>Fornecedor / Descrição</label><input type="text" id="cp-desc" placeholder="Ex: Imobiliária Silva"></div>
+        <div class="fg">
+          <label>Vencimento</label>
+          <input type="date" id="cp-venc">
+        </div>
+        <div class="fg">
+          <label>Forma de pagamento prevista</label>
+          <select id="cp-mod">
+            <option value="avista">À vista</option>
+            <option value="prazo7">Prazo 7 dias</option>
+            <option value="prazo14">Prazo 14 dias</option>
+            <option value="prazo30">Prazo 30 dias</option>
+            <option value="santander">Santander Free</option>
+            <option value="amex">Amex</option>
+          </select>
+        </div>
+      </div>
+      <!-- Recorrência para Op. Fixas / Pessoal -->
+      <div id="cp-rec-wrap" style="display:none;margin-top:8px;padding:10px;background:rgba(160,118,10,.08);border-radius:8px;border:1px solid #E8C87A">
+        <div style="font-size:10px;font-weight:600;color:var(--warn);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px"><i class="ti ti-refresh" style="font-size:12px"></i> Despesa recorrente — repetir por quantos meses?</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px" id="cp-meses-btns">
+          <button class="mes-btn" onclick="selectCpMeses(1,this)">1</button>
+          <button class="mes-btn" onclick="selectCpMeses(2,this)">2</button>
+          <button class="mes-btn" onclick="selectCpMeses(3,this)">3</button>
+          <button class="mes-btn on" onclick="selectCpMeses(6,this)">6</button>
+          <button class="mes-btn" onclick="selectCpMeses(12,this)">12</button>
+        </div>
+        <input type="number" id="cp-meses" placeholder="Ou digite a quantidade..." min="1" max="60" style="font-family:'Inter',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;width:100%">
+      </div>
+      <div class="fbtn-row" style="margin-top:12px">
+        <button class="fbtn primary" id="btn-cp" onclick="saveConta()"><i class="ti ti-check"></i> Confirmar conta a pagar</button>
+        <button class="fbtn" onclick="clearConta()">Limpar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -872,6 +961,11 @@ function safeOn(id, evt, fn){
   const el = document.getElementById(id);
   if(el) el.addEventListener(evt, fn);
 }
+// Proxies para nova conta a pagar
+function onCpTipoChange(){ if(window.onCpTipoChange_fn) window.onCpTipoChange_fn(); }
+function selectCpMeses(n,b){ if(window.selectCpMeses_fn) window.selectCpMeses_fn(n,b); }
+function saveConta(){ if(window.saveConta_fn) window.saveConta_fn(); }
+function clearConta(){ if(window.clearConta_fn) window.clearConta_fn(); }
 
 const { initializeApp } = firebaseApp;
 const { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } = firebaseFirestore;
@@ -1115,6 +1209,11 @@ selectPsMeses = (n, btn) => {
   document.getElementById('ps-meses-input').value = '';
 };
 window.selectPsMeses_fn = selectPsMeses;
+window.onCpTipoChange_fn = onCpTipoChange;
+window.selectCpMeses_fn = selectCpMeses;
+window.saveConta_fn = saveConta;
+window.clearConta_fn = clearConta;
+
 
 openPopup = () => {
   const hj = new Date().toISOString().slice(0,10);
@@ -1781,11 +1880,107 @@ saveMeta=async()=>{
   toast('Meta salva!');
 };
 
+
+// ── NOVA CONTA A PAGAR ───────────────────────────────────
+let cpMesesSel = 6;
+
+onCpTipoChange = () => {
+  const raw = document.getElementById('cp-tipo').value;
+  const grupo = raw ? raw.split('|')[2]||'' : '';
+  const wrap = document.getElementById('cp-rec-wrap');
+  if(wrap) wrap.style.display = GRUPOS_RECORRENTES.includes(grupo) ? 'block' : 'none';
+};
+
+selectCpMeses = (n, btn) => {
+  cpMesesSel = n;
+  document.querySelectorAll('#cp-meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('cp-meses').value = '';
+};
+
+saveConta = async() => {
+  const data    = document.getElementById('cp-data').value;
+  const raw     = document.getElementById('cp-tipo').value;
+  const valor   = R(parseFloat(document.getElementById('cp-valor').value)||0);
+  const desc    = document.getElementById('cp-desc').value.trim();
+  const venc    = document.getElementById('cp-venc').value;
+  const mod     = document.getElementById('cp-mod').value;
+
+  if(!data||!raw||valor<=0||!venc){toast('Preencha data, tipo, valor e vencimento.',true);return;}
+
+  const[tipo,tagcls,grupo] = raw.split('|');
+  const isRec = GRUPOS_RECORRENTES.includes(grupo);
+  const mesesInput = parseInt(document.getElementById('cp-meses').value)||0;
+  const meses = isRec ? (mesesInput || cpMesesSel || 1) : 1;
+  const recId = isRec ? ('rec_'+Date.now()) : null;
+  const[dy,dm,dd] = data.split('-');
+  const[vy,vm,vd] = venc.split('-');
+
+  setSyncStatus('loading');
+  document.getElementById('btn-cp').disabled = true;
+
+  for(let i=0;i<meses;i++){
+    // Data base do mês i
+    let nm=parseInt(dm)+i; let ny=parseInt(dy);
+    while(nm>12){nm-=12;ny++;}
+    const dataI = ny+'-'+String(nm).padStart(2,'0')+'-'+dd;
+
+    // Vencimento do mês i
+    let vnm=parseInt(vm)+i; let vny=parseInt(vy);
+    while(vnm>12){vnm-=12;vny++;}
+    const vencI = vny+'-'+String(vnm).padStart(2,'0')+'-'+vd;
+
+    const conta = {
+      descricao: desc||tipo,
+      categoria: grupo+'|'+tagcls,
+      valor, compra: dataI, vencimento: vencI,
+      modalidade: mod, status: 'pendente',
+      obs: '', gerou_saida: false  // flag: quando pago, criar saída
+    };
+    if(recId) conta.recorrente_id = recId;
+    await addDoc(collection(db,'contas'), conta);
+  }
+
+  document.getElementById('btn-cp').disabled = false;
+  clearConta();
+  toast(meses>1 ? meses+' contas a pagar registradas!' : 'Conta a pagar registrada!');
+};
+
+clearConta = () => {
+  const hj = new Date().toISOString().slice(0,10);
+  document.getElementById('cp-data').value = hj;
+  document.getElementById('cp-tipo').value = '';
+  document.getElementById('cp-valor').value = '';
+  document.getElementById('cp-desc').value = '';
+  document.getElementById('cp-venc').value = '';
+  document.getElementById('cp-mod').value = 'avista';
+  document.getElementById('cp-meses').value = '';
+  cpMesesSel = 6;
+  document.querySelectorAll('#cp-meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelector('#cp-meses-btns .mes-btn[onclick*="6"]').classList.add('on');
+  const wrap = document.getElementById('cp-rec-wrap');
+  if(wrap) wrap.style.display = 'none';
+};
+
 _pagarConta=async(id)=>{
   const td=today();
   setSyncStatus('loading');
+  const conta = ST.contas.find(c=>c.id===id);
+  // Se a conta não gerou saída ainda, cria agora ao marcar como pago
+  if(conta && conta.gerou_saida === false){
+    const[tipo,tagcls] = (conta.categoria||'|').split('|');
+    await addDoc(collection(db,'saidas'),{
+      data: td,
+      tipo: conta.descricao,
+      tagcls: tagcls||'op',
+      grupo: tipo||conta.descricao,
+      valor: R(conta.valor),
+      descricao: conta.descricao,
+      modalidade: conta.modalidade||'avista'
+    });
+  }
   await updateDoc(doc(db,'contas',id),{status:'pago',dataPagamento:td});
-  toast('Conta marcada como paga!');
+  toast('Conta paga e saída registrada!');
 };
 
 _pagarFatura=async(cartao,mes)=>{
@@ -1829,7 +2024,7 @@ clearEntrada=()=>{
 
 const hoje=new Date();
 const hojeStr=hoje.toISOString().slice(0,10);
-['e-data','s-data','m-data','ps-data','pe-data'].forEach(id=>{
+['e-data','s-data','m-data','ps-data','pe-data','cp-data'].forEach(id=>{
   const el=document.getElementById(id);
   if(el) el.value=hojeStr;
 });
