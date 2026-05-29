@@ -311,6 +311,42 @@ select option{font-weight:400;color:#1A1210}
 .mes-btn.on{background:var(--br-d);color:#fff;border-color:var(--br-d)}
 .recorrente-wrap{display:none;margin-top:12px;padding:12px;background:var(--br-xl);border-radius:8px;border:1px solid var(--border)}
 .recorrente-wrap.show{display:block}
+
+/* MOBILE */
+@media(max-width:640px){
+  .topbar{padding:0 12px;position:relative}
+  .tb-brand,.tb-sub,.tb-date,#sync-label{display:none}
+  .tb-right{gap:8px}
+  .logout-btn span{display:none}
+  .main{padding:12px 10px 48px}
+  .nav{gap:2px;padding:3px}
+  .nb{min-width:0;padding:8px 4px;font-size:10px;gap:3px}
+  .nb i{font-size:13px}
+  .kpi-row{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-val{font-size:18px}
+  .grid2{grid-template-columns:1fr}
+  .frow{grid-template-columns:1fr}
+  /* Popup mobile */
+  .popup-box{max-width:100%;margin:0;border-radius:16px 16px 0 0;position:fixed;bottom:0;left:0;right:0}
+  .popup-overlay{align-items:flex-end;padding:0}
+  .popup-body{padding:12px 14px}
+  .popup-footer{padding:10px 14px}
+  .pfrow.c2,.pfrow.c3{grid-template-columns:1fr}
+  .p-mod-row{gap:4px}
+  .p-mod{font-size:10px;padding:4px 8px}
+  /* Modal mobile */
+  .modal-box{max-width:100%;margin:0;border-radius:16px 16px 0 0;position:fixed;bottom:0;left:0;right:0}
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal-body{padding:12px 14px}
+  .modal-footer{padding:10px 14px}
+  /* Contas a pagar mobile */
+  .cp-row{flex-direction:column;align-items:flex-start}
+  .cp-right{width:100%;justify-content:space-between}
+  /* Tabelas mobile */
+  .tbl-wrap{font-size:11px}
+  thead th{padding:8px 8px;font-size:9px}
+  tbody td{padding:8px 8px}
+}
 </style>
 </head>
 <body>
@@ -388,6 +424,7 @@ select option{font-weight:400;color:#1A1210}
               <option value="">Selecione...</option>
               <optgroup label="Op. Fixas">
                 <option value="Aluguel|op|Despesas Operacionais (Fixas)">Aluguel</option>
+              <option value="Acordos|op|Despesas Operacionais (Fixas)">Acordos</option>
                 <option value="Água|op|Despesas Operacionais (Fixas)">Água</option>
                 <option value="Energia|op|Despesas Operacionais (Fixas)">Energia</option>
                 <option value="Internet (operacional)|op|Despesas Operacionais (Fixas)">Internet (operacional)</option>
@@ -552,7 +589,7 @@ select option{font-weight:400;color:#1A1210}
       <span id="sync-label">Conectando...</span>
     </div>
     <div class="tb-date" id="hd-date"></div>
-    <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout"></i> Sair</button>
+    <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout"></i> <span>Sair</span></button>
   </div>
 </div>
 
@@ -675,6 +712,11 @@ select option{font-weight:400;color:#1A1210}
 
   <!-- CONTAS A PAGAR -->
   <div class="pnl" id="pnl-contas">
+    <div class="mes-nav">
+      <button class="mes-nav-btn" onclick="navMes(-1)"><i class="ti ti-chevron-left"></i></button>
+      <div class="mes-nav-label" id="mes-contas-label">Maio 2026</div>
+      <button class="mes-nav-btn" onclick="navMes(1)"><i class="ti ti-chevron-right"></i></button>
+    </div>
     <div class="kpi-row" id="kpi-contas"></div>
 
     <!-- PAINEL DE VENCIMENTOS -->
@@ -736,6 +778,7 @@ select option{font-weight:400;color:#1A1210}
             <option value="">Selecione...</option>
             <optgroup label="Op. Fixas">
               <option value="Aluguel|op|Despesas Operacionais (Fixas)">Aluguel</option>
+              <option value="Acordos|op|Despesas Operacionais (Fixas)">Acordos</option>
               <option value="Água|op|Despesas Operacionais (Fixas)">Água</option>
               <option value="Energia|op|Despesas Operacionais (Fixas)">Energia</option>
               <option value="Internet (operacional)|op|Despesas Operacionais (Fixas)">Internet (operacional)</option>
@@ -917,7 +960,7 @@ function mesLabel(mk){
 }
 
 function atualizaLabelMes(){
-  ['saude','entradas','saidas','meta'].forEach(id=>{
+  ['saude','entradas','saidas','meta','contas'].forEach(id=>{
     const el = document.getElementById('mes-'+id+'-label');
     if(el) el.textContent = mesLabel(mesFiltro);
   });
@@ -1376,7 +1419,7 @@ function renderSaude(){
   const ld=dates.slice(-14);
   const lbl=ld.map(d=>{const[,m,dd]=d.split('-');return dd+'/'+m;});
   mkChart('ch-evs',{type:'bar',data:{labels:lbl,datasets:[{label:'Entradas',data:ld.map(totalE),backgroundColor:'#7C5C3E',borderRadius:3},{label:'Saídas',data:ld.map(totalS),backgroundColor:'#C0392B',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR},grid:{display:false}},y:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
-  let acc=0;const accV=ld.map(d=>{acc+=totalEMes(d)-totalSMes(d);return R(acc);});
+  let acc=0;const accV=datesDoMes().slice(-14).map(d=>{acc+=totalEMes(d)-totalSMes(d);return R(acc);});
   mkChart('ch-saldo',{type:'line',data:{labels:lbl,datasets:[{label:'Saldo',data:accV,borderColor:'#2E7D52',backgroundColor:'rgba(46,125,82,.1)',tension:.35,fill:true,pointRadius:4,pointBackgroundColor:'#2E7D52',pointBorderColor:'#fff',pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR},grid:{display:false}},y:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
@@ -1488,7 +1531,9 @@ function renderMeta(){
 // ── RENDER CONTAS A PAGAR ────────────────────────────────
 function renderContas(){
   const td=today();
-  const contas=[...ST.contas].sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
+  // Filtrar pelo mês selecionado
+  const todasContas=[...ST.contas].sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
+  const contas=todasContas.filter(c=>c.vencimento&&c.vencimento.startsWith(mesFiltro));
   const pendentes=contas.filter(c=>c.status!=='pago');
   const pagas=contas.filter(c=>c.status==='pago');
   const atrasadas=pendentes.filter(c=>c.vencimento<td&&c.modalidade!=='santander'&&c.modalidade!=='amex');
@@ -1497,7 +1542,7 @@ function renderContas(){
 
   const totalAtraso=R(atrasadas.reduce((a,b)=>a+R(b.valor),0));
   const totalSemana=R(semana.reduce((a,b)=>a+R(b.valor),0));
-  const totalMes=R(contas.filter(c=>c.status!=='pago').reduce((a,b)=>a+R(b.valor),0));
+  const totalMes=R(pendentes.reduce((a,b)=>a+R(b.valor),0));
   const totalPago=R(pagas.reduce((a,b)=>a+R(b.valor),0));
 
   document.getElementById('kpi-contas').innerHTML=`
