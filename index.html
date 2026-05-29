@@ -1240,12 +1240,17 @@ window.showView=showView;
 safeOn('login-pass','keydown',e=>{if(e.key==='Enter')window.doLogin();});
 safeOn('login-email','keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
 
+let _listenersInited = false;
 onAuthStateChanged(auth, user=>{
   if(user){
     document.getElementById('login-wrap').style.display='none';
-    document.getElementById('loading').classList.add('show');
-    initListeners();
+    if(!_listenersInited){
+      _listenersInited = true;
+      document.getElementById('loading').classList.add('show');
+      initListeners();
+    }
   } else {
+    _listenersInited = false;
     document.getElementById('login-wrap').style.display='flex';
     document.getElementById('loading').classList.remove('show');
   }
@@ -1259,10 +1264,10 @@ function initListeners(){
       setSyncStatus('ok');dbReady=true;renderAll();seedMetas();
     }
   }
-  onSnapshot(collection(db,'entradas'),snap=>{ST.entradas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.entradas=true;checkReady();if(dbReady)renderAll();},()=>setSyncStatus('err'));
-  onSnapshot(collection(db,'saidas'),snap=>{ST.saidas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.saidas=true;checkReady();if(dbReady)renderAll();},()=>setSyncStatus('err'));
-  onSnapshot(collection(db,'metas'),snap=>{ST.metas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.metas=true;checkReady();if(dbReady)renderAll();},()=>setSyncStatus('err'));
-  onSnapshot(collection(db,'contas'),snap=>{ST.contas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.contas=true;checkReady();if(dbReady)renderContas();},()=>setSyncStatus('err'));
+  onSnapshot(collection(db,'entradas'),snap=>{ST.entradas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.entradas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('entradas:',err.message);});
+  onSnapshot(collection(db,'saidas'),snap=>{ST.saidas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.saidas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('saidas:',err.message);});
+  onSnapshot(collection(db,'metas'),snap=>{ST.metas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.metas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('metas:',err.message);});
+  onSnapshot(collection(db,'contas'),snap=>{ST.contas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.contas=true;checkReady();if(dbReady)renderContas();},(err)=>{setSyncStatus('err');console.error('contas:',err.message);});
 }
 
 async function seedMetas(){
@@ -1719,8 +1724,12 @@ window.clearEntrada=()=>{
 
 const hoje=new Date();
 const hojeStr=hoje.toISOString().slice(0,10);
-['e-data','s-data','m-data'].forEach(id=>document.getElementById(id).value=hojeStr);
-document.getElementById('hd-date').textContent=hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+['e-data','s-data','m-data','ps-data','pe-data'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.value=hojeStr;
+});
+const hdDate=document.getElementById('hd-date');
+if(hdDate) hdDate.textContent=hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 // initListeners chamado pelo onAuthStateChanged
 </script>
