@@ -382,6 +382,9 @@ select option{font-weight:400;color:#1A1210}
 .edit-x{width:28px;height:28px;border-radius:50%;background:rgba(196,168,130,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C4A882;font-family:inherit}
 .edit-body{padding:20px}
 .edit-footer{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--border);background:var(--br-xl)}
+.mes-nav-hoje{padding:5px 12px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--br);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.mes-nav-hoje:hover{background:var(--br-xl);border-color:var(--br-l)}
+.mes-nav-hoje.ativo{background:var(--br-d);color:#fff;border-color:var(--br-d);cursor:default}
 </style>
 </head>
 <body>
@@ -660,6 +663,7 @@ select option{font-weight:400;color:#1A1210}
       <button class="mes-nav-btn" onclick="navMes(-1)"><i class="ti ti-chevron-left"></i></button>
       <div class="mes-nav-label" id="mes-saude-label">Maio 2026</div>
       <button class="mes-nav-btn" onclick="navMes(1)"><i class="ti ti-chevron-right"></i></button>
+      <button class="mes-nav-hoje" id="btn-hoje-saude" onclick="navHoje()">Hoje</button>
     </div>
     <div id="alerta-recorrentes"></div>
     <div class="kpi-row" id="kpi-saude"></div>
@@ -689,6 +693,7 @@ select option{font-weight:400;color:#1A1210}
       <button class="mes-nav-btn" onclick="navMes(-1)"><i class="ti ti-chevron-left"></i></button>
       <div class="mes-nav-label" id="mes-entradas-label">Maio 2026</div>
       <button class="mes-nav-btn" onclick="navMes(1)"><i class="ti ti-chevron-right"></i></button>
+      <button class="mes-nav-hoje" id="btn-hoje-entradas" onclick="navHoje()">Hoje</button>
     </div>
     <div id="alerta-recorrentes-e"></div>
     <div class="kpi-row" id="kpi-entradas"></div>
@@ -710,6 +715,7 @@ select option{font-weight:400;color:#1A1210}
       <button class="mes-nav-btn" onclick="navMes(-1)"><i class="ti ti-chevron-left"></i></button>
       <div class="mes-nav-label" id="mes-saidas-label">Maio 2026</div>
       <button class="mes-nav-btn" onclick="navMes(1)"><i class="ti ti-chevron-right"></i></button>
+      <button class="mes-nav-hoje" id="btn-hoje-saidas" onclick="navHoje()">Hoje</button>
     </div>
     <div id="alerta-recorrentes-s"></div>
     <div class="kpi-row" id="kpi-saidas"></div>
@@ -731,6 +737,7 @@ select option{font-weight:400;color:#1A1210}
       <button class="mes-nav-btn" onclick="navMes(-1)"><i class="ti ti-chevron-left"></i></button>
       <div class="mes-nav-label" id="mes-meta-label">Maio 2026</div>
       <button class="mes-nav-btn" onclick="navMes(1)"><i class="ti ti-chevron-right"></i></button>
+      <button class="mes-nav-hoje" id="btn-hoje-meta" onclick="navHoje()">Hoje</button>
     </div>
     <div id="alerta-recorrentes-m"></div>
     <div class="kpi-row" id="kpi-meta"></div>
@@ -765,6 +772,7 @@ select option{font-weight:400;color:#1A1210}
       <button class="mes-nav-btn" onclick="navMes(-1)"><i class="ti ti-chevron-left"></i></button>
       <div class="mes-nav-label" id="mes-contas-label">Maio 2026</div>
       <button class="mes-nav-btn" onclick="navMes(1)"><i class="ti ti-chevron-right"></i></button>
+      <button class="mes-nav-hoje" id="btn-hoje-contas" onclick="navHoje()">Hoje</button>
     </div>
     <div class="kpi-row" id="kpi-contas"></div>
 
@@ -1011,6 +1019,7 @@ function onCpTipoChange(){ if(window.onCpTipoChange_fn) window.onCpTipoChange_fn
 function selectCpMeses(n,b){ if(window.selectCpMeses_fn) window.selectCpMeses_fn(n,b); }
 function saveConta(){ if(window.saveConta_fn) window.saveConta_fn(); }
 function clearConta(){ if(window.clearConta_fn) window.clearConta_fn(); }
+function navHoje(){ if(window.navHoje_fn) window.navHoje_fn(); }
 function closeEdit(){ if(window.closeEdit_fn) window.closeEdit_fn(); }
 function saveEdit(){ if(window.saveEdit_fn) window.saveEdit_fn(); }
 function openEdit(t,id){ if(window.openEdit_fn) window.openEdit_fn(t,id); }
@@ -1106,6 +1115,7 @@ function atualizaLabelMes(){
     const el = document.getElementById('mes-'+id+'-label');
     if(el) el.textContent = mesLabel(mesFiltro);
   });
+  atualizaBtnHoje();
 }
 
 navMes = (dir) => {
@@ -1116,9 +1126,32 @@ navMes = (dir) => {
   if(nm < 1){nm=12;ny--;}
   mesFiltro = ny + '-' + String(nm).padStart(2,'0');
   atualizaLabelMes();
+  atualizaBtnHoje();
   renderAll();
   checkAlertasRecorrentes();
 };
+
+navHoje = () => {
+  const hj = new Date();
+  mesFiltro = hj.getFullYear() + '-' + String(hj.getMonth()+1).padStart(2,'0');
+  atualizaLabelMes();
+  atualizaBtnHoje();
+  renderAll();
+  checkAlertasRecorrentes();
+};
+
+function atualizaBtnHoje(){
+  const hj = new Date();
+  const meAtual = hj.getFullYear() + '-' + String(hj.getMonth()+1).padStart(2,'0');
+  const eHoje = mesFiltro === meAtual;
+  ['saude','entradas','saidas','meta','contas'].forEach(id=>{
+    const btn = document.getElementById('btn-hoje-'+id);
+    if(btn){
+      btn.className = 'mes-nav-hoje' + (eHoje?' ativo':'');
+      btn.disabled = eHoje;
+    }
+  });
+}
 
 function dateInMes(d){ return d && d.startsWith(mesFiltro); }
 function datesDoMes(){ const s=new Set([...ST.entradas.filter(e=>dateInMes(e.data)).map(e=>e.data),...ST.saidas.filter(s=>dateInMes(s.data)).map(s=>s.data)]);return[...s].sort(); }
@@ -1370,6 +1403,7 @@ window.onCpTipoChange_fn = onCpTipoChange;
 window.selectCpMeses_fn = selectCpMeses;
 window.saveConta_fn = saveConta;
 window.clearConta_fn = clearConta;
+window.navHoje_fn = navHoje;
 window.closeEdit_fn = closeEdit;
 window.saveEdit_fn = saveEdit;
 window.openEdit_fn = openEdit;
@@ -1895,11 +1929,12 @@ function renderSaude(){
     <td class="td-mut">${r.lastQ?brl(r.qv):''}</td><td>${r.lastQ?dotR(r.qv):''}</td>
     <td class="td-mut">${r.lastM?brl(r.mv):''}</td><td>${r.lastM?dotR(r.mv):''}</td>
   </tr>`).join('');
-  const ld=dates.slice(-14);
+  const ld=datesDoMes();
   const lbl=ld.map(d=>{const[,m,dd]=d.split('-');return dd+'/'+m;});
-  mkChart('ch-evs',{type:'bar',data:{labels:lbl,datasets:[{label:'Entradas',data:ld.map(totalEMes),backgroundColor:'#7C5C3E',borderRadius:3},{label:'Saídas',data:ld.map(totalSMes),backgroundColor:'#C0392B',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR},grid:{display:false}},y:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
-  let acc=0;const accV=datesDoMes().slice(-14).map(d=>{acc+=totalEMes(d)-totalSMes(d);return R(acc);});
-  mkChart('ch-saldo',{type:'line',data:{labels:lbl,datasets:[{label:'Saldo',data:accV,borderColor:'#2E7D52',backgroundColor:'rgba(46,125,82,.1)',tension:.35,fill:true,pointRadius:4,pointBackgroundColor:'#2E7D52',pointBorderColor:'#fff',pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR},grid:{display:false}},y:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  const fontSize=ld.length>20?9:11;
+  mkChart('ch-evs',{type:'bar',data:{labels:lbl,datasets:[{label:'Entradas',data:ld.map(totalEMes),backgroundColor:'#7C5C3E',borderRadius:2},{label:'Saídas',data:ld.map(totalSMes),backgroundColor:'#C0392B',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},y:{ticks:{font:{size:10},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  let acc=0;const accV=ld.map(d=>{acc+=totalEMes(d)-totalSMes(d);return R(acc);});
+  mkChart('ch-saldo',{type:'line',data:{labels:lbl,datasets:[{label:'Saldo',data:accV,borderColor:'#2E7D52',backgroundColor:'rgba(46,125,82,.1)',tension:.35,fill:true,pointRadius:ld.length>20?2:4,pointBackgroundColor:'#2E7D52',pointBorderColor:'#fff',pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},y:{ticks:{font:{size:10},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
 // ── RENDER ENTRADAS ──────────────────────────────────────
