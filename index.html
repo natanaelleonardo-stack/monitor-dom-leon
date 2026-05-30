@@ -1644,77 +1644,170 @@ async function seedMetas(){
 // ═══════════════════════════════════════════════════════════
 // ITEM 18: PROJEÇÃO SAZONAL + TERMÔMETRO + SEMÁFORO
 // ═══════════════════════════════════════════════════════════
+// ── FERIADOS 2026-2029 ───────────────────────────────────
+const FERIADOS = new Set([
+  // 2026 — Nacionais fixos
+  '2026-01-01','2026-04-21','2026-05-01','2026-09-07',
+  '2026-10-12','2026-11-02','2026-11-15','2026-11-20','2026-12-25',
+  // 2026 — Nacionais móveis
+  '2026-02-16','2026-02-17', // Carnaval
+  '2026-04-03',              // Sexta-feira Santa
+  '2026-06-04',              // Corpus Christi
+  // 2026 — Estaduais SP
+  '2026-01-25',              // Aniversário de SP
+  '2026-07-09',              // Revolução Constitucionalista
+
+  // 2027 — Nacionais fixos
+  '2027-01-01','2027-04-21','2027-05-01','2027-09-07',
+  '2027-10-12','2027-11-02','2027-11-15','2027-11-20','2027-12-25',
+  // 2027 — Nacionais móveis
+  '2027-02-15','2027-02-16', // Carnaval
+  '2027-03-26',              // Sexta-feira Santa
+  '2027-05-27',              // Corpus Christi
+  // 2027 — Estaduais SP
+  '2027-01-25','2027-07-09',
+
+  // 2028 — Nacionais fixos
+  '2028-01-01','2028-04-21','2028-05-01','2028-09-07',
+  '2028-10-12','2028-11-02','2028-11-15','2028-11-20','2028-12-25',
+  // 2028 — Nacionais móveis
+  '2028-02-28','2028-02-29', // Carnaval (ano bissexto)
+  '2028-04-14',              // Sexta-feira Santa
+  '2028-06-15',              // Corpus Christi
+  // 2028 — Estaduais SP
+  '2028-01-25','2028-07-09',
+
+  // 2029 — Nacionais fixos
+  '2029-01-01','2029-04-21','2029-05-01','2029-09-07',
+  '2029-10-12','2029-11-02','2029-11-15','2029-11-20','2029-12-25',
+  // 2029 — Nacionais móveis
+  '2029-02-12','2029-02-13', // Carnaval
+  '2029-03-30',              // Sexta-feira Santa
+  '2029-05-31',              // Corpus Christi
+  // 2029 — Estaduais SP
+  '2029-01-25','2029-07-09',
+]);
+
+const ULTIMO_ANO_FERIADOS = 2029;
+
+function isFeriado(data){ return FERIADOS.has(data); }
+
+// Categoria sazonal: 0-6 = dia semana normal, 7 = feriado, 8 = véspera de feriado
+function catSazonal(data){
+  if(isFeriado(data)) return 7;
+  const amanha = addDays(data,1);
+  if(isFeriado(amanha)) return 8;
+  return dweek(data);
+}
+
 function calcProjecao(){
   const hoje = today();
   const[ay,am] = mesFiltro.split('-');
   const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
 
-  // 1. Índices sazonais por dia da semana (histórico completo, excluindo mês atual)
-  const indices = [0,1,2,3,4,5,6].map(dw=>{
+  // Alerta feriados expirados (exibir no card se mês > dez/2029)
+  const feriadosExpirados = parseInt(ay) > ULTIMO_ANO_FERIADOS;
+
+  // 1. Índices sazonais por categoria (0-6 = dia semana, 7 = feriado, 8 = véspera)
+  // Usar IQR para excluir outliers em cada categoria
+  const indices = [0,1,2,3,4,5,6,7,8].map(cat=>{
     const vals = ST.entradas
       .filter(e=>{
-        if(e.data.startsWith(mesFiltro)) return false; // excluir mês atual
-        return dweek(e.data) === dw;
+        if(e.data.startsWith(mesFiltro)) return false;
+        return catSazonal(e.data) === cat;
       })
       .map(e=>R((e.prazo||0)+(e.cortesia||0)+(e.credito||0)+(e.debito||0)+(e.dinheiro||0)+(e.pix||0)));
 
-    if(!vals.length) return 0;
+    if(!vals.length) return cat===7 ? (indices_dw_fallback(cat)) : 0;
 
-    // IQR para excluir outliers
     const sorted = [...vals].sort((a,b)=>a-b);
     const q1 = sorted[Math.floor(sorted.length*0.25)];
     const q3 = sorted[Math.floor(sorted.length*0.75)];
     const iqr = q3-q1;
-    const filtered = sorted.filter(v=>v>=q1-1.5*iqr && v<=q3+1.5*iqr);
+    const fence = iqr*1.5;
+    const filtered = sorted.filter(v=>v>=q1-fence && v<=q3+fence);
     return filtered.length ? R(filtered.reduce((a,b)=>a+b,0)/filtered.length) : R(vals.reduce((a,b)=>a+b,0)/vals.length);
   });
 
-  // 2. Dias lançados no mês atual
+  // Fallback: se não há histórico de feriados, usar 60% do índice do mesmo dia da semana
+  function indiceParaData(data){
+    const cat = catSazonal(data);
+    if(indices[cat]>0) return indices[cat];
+    if(cat===7||cat===8) return R((indices[dweek(data)]||0)*0.6);
+    return indices[cat]||0;
+  }
+
+  // 2. Dias lançados no mês atual (excluindo feriados do cálculo do fator)
   const diasLancados = ST.entradas.filter(e=>e.data.startsWith(mesFiltro)).sort((a,b)=>a.data.localeCompare(b.data));
   const realizadoTotal = R(diasLancados.reduce((a,e)=>a+totalE(e.data),0));
 
-  // 3. Fator do mês atual
+  // 3. Fator do mês atual — usando índice correto por categoria
   let somaIndicesLancados = 0;
   diasLancados.forEach(e=>{
-    const dw = dweek(e.data);
-    somaIndicesLancados += indices[dw]||0;
+    somaIndicesLancados += indiceParaData(e.data)||0;
   });
   const fator = somaIndicesLancados>0 ? realizadoTotal/somaIndicesLancados : 1;
 
-  // 4. Projetar dias restantes
+  // 4. Projetar dias restantes com categoria correta
   let projecaoRestante = 0;
   for(let d=1;d<=diasNoMes;d++){
     const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
-    if(dataStr > hoje || !ST.entradas.find(e=>e.data===dataStr)){
-      const dw = dweek(dataStr);
-      projecaoRestante += (indices[dw]||0) * fator;
+    if(!ST.entradas.find(e=>e.data===dataStr)){
+      projecaoRestante += indiceParaData(dataStr) * fator;
     }
   }
   const projecaoTotal = R(realizadoTotal + projecaoRestante);
 
-  // 5. Score de confiabilidade
+  // 5. Score de confiabilidade — CORRIGIDO
   let score = 0;
   const nDias = diasLancados.length;
-  if(nDias>=14) score+=25; else if(nDias>=7) score+=15;
+  const pctMes = nDias / diasNoMes;
+
+  // Critério principal: % do mês lançado (mais justo que número absoluto)
+  if(pctMes>=0.85) score+=35;
+  else if(pctMes>=0.65) score+=28;
+  else if(pctMes>=0.45) score+=20;
+  else if(pctMes>=0.25) score+=12;
+  else score+=5;
+
+  // Sábados e domingos lançados
   const temSab = diasLancados.some(e=>dweek(e.data)===6);
   const temDom = diasLancados.some(e=>dweek(e.data)===0);
   if(temSab && temDom) score+=20; else if(temSab||temDom) score+=10;
+
+  // Histórico disponível
   const mesesHistorico = [...new Set(ST.entradas.map(e=>e.data.slice(0,7)).filter(m=>m!==mesFiltro))].length;
-  if(mesesHistorico>=3) score+=15; else if(mesesHistorico>=2) score+=10; else if(mesesHistorico>=1) score+=5;
-  // Verificar estabilidade do fator (últimas 2 semanas)
+  if(mesesHistorico>=4) score+=20; else if(mesesHistorico>=3) score+=15; else if(mesesHistorico>=2) score+=10; else if(mesesHistorico>=1) score+=5;
+
+  // Estabilidade do fator entre semanas (só se tiver dados suficientes)
   if(nDias>=14){
     const semana1 = diasLancados.slice(0,7);
     const semana2 = diasLancados.slice(7,14);
-    const f1 = R(semana1.reduce((a,e)=>a+totalE(e.data),0)) / R(semana1.reduce((a,e)=>a+(indices[dweek(e.data)]||1),0));
-    const f2 = R(semana2.reduce((a,e)=>a+totalE(e.data),0)) / R(semana2.reduce((a,e)=>a+(indices[dweek(e.data)]||1),0));
-    if(Math.abs(f1-f2)/Math.max(f1,f2)<0.05) score+=20; else if(Math.abs(f1-f2)/Math.max(f1,f2)<0.10) score+=10;
+    const s1idx = R(semana1.reduce((a,e)=>a+(indiceParaData(e.data)||1),0));
+    const s2idx = R(semana2.reduce((a,e)=>a+(indiceParaData(e.data)||1),0));
+    const f1 = s1idx>0 ? R(semana1.reduce((a,e)=>a+totalE(e.data),0))/s1idx : 1;
+    const f2 = s2idx>0 ? R(semana2.reduce((a,e)=>a+totalE(e.data),0))/s2idx : 1;
+    const variacao = Math.abs(f1-f2)/Math.max(f1,f2,0.01);
+    if(variacao<0.05) score+=15; else if(variacao<0.12) score+=8;
   }
-  // Penalidades
-  const outlierDetectado = ST.entradas.some(e=>{
-    const v=totalE(e.data); return v>5000;
+
+  // Penalidades — só detectar outlier nos dados históricos, não no mês atual
+  const outlierHistorico = ST.entradas.some(e=>{
+    if(e.data.startsWith(mesFiltro)) return false;
+    const v = totalE(e.data);
+    // Outlier real = dia com mais de 3x a média geral
+    const mediaGeral = R(ST.entradas.reduce((a,en)=>a+totalE(en.data),0)/Math.max(ST.entradas.length,1));
+    return v > mediaGeral * 3;
   });
-  if(outlierDetectado) score-=8;
-  if(fator>1.3||fator<0.7) score-=10;
+  if(outlierHistorico) score-=5; // penalidade reduzida — IQR já trata o problema
+
+  // Fator muito fora do normal = mês atípico
+  if(fator>1.4||fator<0.6) score-=8;
+
+  // Feriados sem dados históricos = incerteza adicional
+  const feriadosNoMes = Array.from({length:diasNoMes},(_,i)=>ay+'-'+am+'-'+String(i+1).padStart(2,'0')).filter(isFeriado);
+  if(feriadosNoMes.length>0 && indices[7]===0) score-=5;
+
   score = Math.max(0, Math.min(100, score));
 
   // 6. Meta do mês
@@ -1728,11 +1821,9 @@ function calcProjecao(){
     if(desvio>=0.03){semaforoClass='ok';semaforoPct='+'+Math.round(desvio*100)+'%';}
     else if(desvio>=-0.03){semaforoClass='warn';semaforoPct=Math.round(desvio*100)+'%';}
     else{semaforoClass='err';semaforoPct=Math.round(desvio*100)+'%';}
-  } else if(score<40){
-    semaforoClass='warn';semaforoPct='?';
   }
 
-  return {projecaoTotal, score, fator, nDias, metaTotal, semaforoClass, semaforoPct, diasNoMes};
+  return {projecaoTotal, score, fator, nDias, metaTotal, semaforoClass, semaforoPct, diasNoMes, feriadosExpirados, feriadosNoMes};
 }
 
 function renderSemaforo(cls,pct){
@@ -1749,7 +1840,6 @@ function renderSemaforo(cls,pct){
 
 function renderTermometro(score){
   const cls = score>=70?'ok':score>=40?'warn':'err';
-  const label = score>=70?'Alta':'score'>=40?'Moderada':'Baixa';
   const lbl = score>=70?'Alta':score>=40?'Moderada':'Baixa';
   return `<div class="termo-row">
     <span style="font-size:10px;color:var(--muted)">Confiabilidade</span>
@@ -1789,6 +1879,8 @@ function renderSaude(){
       <div class="kpi-label" style="padding-right:32px">Projeção do mês</div>
       <div class="kpi-val" style="padding-right:32px">${brl(proj.projecaoTotal)}</div>
       <div style="font-size:11px;color:var(--muted);margin:4px 0 0;padding-right:32px">${vsMetaStr}</div>
+      ${proj.feriadosNoMes.length>0?`<div style="font-size:10px;color:var(--br-m);margin:3px 0 0;padding-right:32px"><i class="ti ti-calendar-event" style="font-size:11px"></i> ${proj.feriadosNoMes.length} feriado(s) no mês considerado(s)</div>`:''}
+      ${proj.feriadosExpirados?'<div style="font-size:10px;color:var(--warn);background:var(--warn-l);border-radius:6px;padding:5px 8px;margin-top:6px"><i class="ti ti-alert-triangle" style="font-size:11px"></i> Feriados cadastrados até 2029. Atualize o calendário para meses futuros.</div>':''}
       ${renderTermometro(proj.score)}
     </div>
   `;
