@@ -351,12 +351,59 @@ select option{font-weight:400;color:#1A1210}
 .cp-form-section{background:var(--warn-l);border:1px solid #E8C87A;border-radius:12px;padding:20px;margin-bottom:16px}
 .cp-form-title{font-size:12px;font-weight:600;color:var(--warn);text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;display:flex;align-items:center;gap:7px}
 .cp-form-title i{font-size:16px}
+
+.kpi-proj{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;border-left:4px solid var(--br);position:relative}
+.kpi-proj.ok{border-left-color:var(--ok)}
+.kpi-proj.warn{border-left-color:var(--warn)}
+.kpi-proj.err{border-left-color:var(--err)}
+.semaforo{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:3px;align-items:center}
+.sem-luz{width:10px;height:10px;border-radius:50%;background:var(--border)}
+.sem-luz.active-green{background:var(--ok)}
+.sem-luz.active-yellow{background:var(--warn)}
+.sem-luz.active-red{background:var(--err)}
+.sem-pct{font-size:9px;color:var(--muted);margin-top:2px;text-align:center;font-weight:500}
+.termo-row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:4px}
+.termo-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.termo-badge.ok{background:var(--ok-l);color:var(--ok)}
+.termo-badge.warn{background:var(--warn-l);color:var(--warn)}
+.termo-badge.err{background:var(--err-l);color:var(--err)}
+.termo-track{height:5px;border-radius:3px;background:var(--border);overflow:hidden}
+.termo-fill{height:100%;border-radius:3px;transition:width .4s}
+.termo-fill.ok{background:var(--ok)}
+.termo-fill.warn{background:var(--warn)}
+.termo-fill.err{background:var(--err)}
+
+.edit-overlay{position:fixed;inset:0;background:rgba(26,18,16,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:1rem}
+.edit-overlay.show{display:flex}
+.edit-box{background:var(--surface);border-radius:16px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 8px 32px rgba(74,55,40,.2)}
+.edit-hd{background:var(--br-d);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.edit-hd-title{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.edit-hd-title i{font-size:16px;color:#C4A882}
+.edit-x{width:28px;height:28px;border-radius:50%;background:rgba(196,168,130,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C4A882;font-family:inherit}
+.edit-body{padding:20px}
+.edit-footer{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--border);background:var(--br-xl)}
 </style>
 </head>
 <body>
 
 
 
+
+
+<!-- POPUP EDIÇÃO -->
+<div class="edit-overlay" id="edit-overlay">
+  <div class="edit-box">
+    <div class="edit-hd">
+      <div class="edit-hd-title"><i class="ti ti-edit"></i> <span id="edit-titulo">Editar lançamento</span></div>
+      <button class="edit-x" onclick="closeEdit()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="edit-body" id="edit-body"></div>
+    <div class="edit-footer">
+      <button class="fbtn primary" id="btn-edit-save" onclick="saveEdit()"><i class="ti ti-check"></i> Salvar alterações</button>
+      <button class="fbtn" onclick="closeEdit()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL ESTENDER RECORRENTE -->
 <div class="modal-overlay" id="modal-estender">
@@ -616,20 +663,18 @@ select option{font-weight:400;color:#1A1210}
     </div>
     <div id="alerta-recorrentes"></div>
     <div class="kpi-row" id="kpi-saude"></div>
-    <div class="grid2">
-      <div class="chart-card">
-        <div class="chart-hd"><i class="ti ti-chart-bar"></i><span>Entradas vs saídas</span></div>
-        <div class="chart-legend">
-          <div class="leg-item"><span class="leg-sq" style="background:#7C5C3E"></span>Entradas</div>
-          <div class="leg-item"><span class="leg-sq" style="background:#C0392B"></span>Saídas</div>
-        </div>
-        <div style="position:relative;height:200px"><canvas id="ch-evs"></canvas></div>
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-hd"><i class="ti ti-chart-bar"></i><span>Entradas vs saídas</span></div>
+      <div class="chart-legend">
+        <div class="leg-item"><span class="leg-sq" style="background:#7C5C3E"></span>Entradas</div>
+        <div class="leg-item"><span class="leg-sq" style="background:#C0392B"></span>Saídas</div>
       </div>
-      <div class="chart-card">
-        <div class="chart-hd"><i class="ti ti-chart-line"></i><span>Saldo acumulado</span></div>
-        <div class="chart-legend"><div class="leg-item"><span class="leg-sq" style="background:#2E7D52"></span>Saldo</div></div>
-        <div style="position:relative;height:200px"><canvas id="ch-saldo"></canvas></div>
-      </div>
+      <div style="position:relative;height:200px"><canvas id="ch-evs"></canvas></div>
+    </div>
+    <div class="chart-card" style="margin-bottom:20px">
+      <div class="chart-hd"><i class="ti ti-chart-line"></i><span>Saldo acumulado</span></div>
+      <div class="chart-legend"><div class="leg-item"><span class="leg-sq" style="background:#2E7D52"></span>Saldo</div></div>
+      <div style="position:relative;height:200px"><canvas id="ch-saldo"></canvas></div>
     </div>
     <div class="sec-hd"><i class="ti ti-table"></i><span>Histórico diário</span></div>
     <div class="tbl-wrap"><table>
@@ -654,7 +699,7 @@ select option{font-weight:400;color:#1A1210}
     </div>
     <div class="sec-hd"><i class="ti ti-table"></i><span>Detalhamento por dia</span></div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Data</th><th>A prazo</th><th>%</th><th>Cortesia</th><th>%</th><th>Crédito</th><th>%</th><th>Débito</th><th>%</th><th>Dinheiro</th><th>%</th><th>Pix/QR</th><th>%</th><th>Total</th></tr></thead>
+      <thead><tr><th>Data</th><th>A prazo</th><th>%</th><th>Cortesia</th><th>%</th><th>Crédito</th><th>%</th><th>Débito</th><th>%</th><th>Dinheiro</th><th>%</th><th>Pix/QR</th><th>%</th><th>Total</th><th></th></tr></thead>
       <tbody id="tb-entradas"></tbody>
     </table></div>
   </div>
@@ -966,6 +1011,9 @@ function onCpTipoChange(){ if(window.onCpTipoChange_fn) window.onCpTipoChange_fn
 function selectCpMeses(n,b){ if(window.selectCpMeses_fn) window.selectCpMeses_fn(n,b); }
 function saveConta(){ if(window.saveConta_fn) window.saveConta_fn(); }
 function clearConta(){ if(window.clearConta_fn) window.clearConta_fn(); }
+function closeEdit(){ if(window.closeEdit_fn) window.closeEdit_fn(); }
+function saveEdit(){ if(window.saveEdit_fn) window.saveEdit_fn(); }
+function openEdit(t,id){ if(window.openEdit_fn) window.openEdit_fn(t,id); }
 
 const { initializeApp } = firebaseApp;
 const { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } = firebaseFirestore;
@@ -1198,6 +1246,115 @@ saveEstender = async() => {
   toast(meses+' meses adicionados com sucesso!');
 };
 
+
+// ── EDIÇÃO DE LANÇAMENTOS ────────────────────────────────
+let editCtx = null; // {tipo:'saida'|'entrada'|'conta', id, data}
+
+function openEdit(tipo, id){
+  editCtx = {tipo, id};
+  const overlay = document.getElementById('edit-overlay');
+  const body = document.getElementById('edit-body');
+  const titulo = document.getElementById('edit-titulo');
+
+  if(tipo==='saida'){
+    const s = ST.saidas.find(x=>x.id===id);
+    if(!s) return;
+    titulo.textContent = 'Editar saída';
+    body.innerHTML = `
+      <div class="frow">
+        <div class="fg"><label>Data</label><input type="date" id="ed-data" value="${s.data}"></div>
+        <div class="fg"><label>Tipo de despesa</label><input type="text" id="ed-tipo" value="${s.tipo||''}"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Valor (R$)</label><input type="number" id="ed-valor" value="${s.valor||0}" step="0.01"></div>
+        <div class="fg"><label>Descrição / Fornecedor</label><input type="text" id="ed-desc" value="${s.descricao||''}"></div>
+      </div>
+      ${s.recorrente_id?'<div style="font-size:11px;color:var(--warn);padding:8px;background:var(--warn-l);border-radius:8px"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Este lançamento faz parte de uma recorrência. A edição afeta apenas este registro.</div>':''}
+    `;
+  } else if(tipo==='entrada'){
+    const e = ST.entradas.find(x=>x.data===id);
+    if(!e) return;
+    titulo.textContent = 'Editar entrada — '+dlabel(id);
+    body.innerHTML = `
+      <div class="frow">
+        <div class="fg"><label>A prazo (R$)</label><input type="number" id="ed-prazo" value="${e.prazo||0}" step="0.01"></div>
+        <div class="fg"><label>Cortesia (R$)</label><input type="number" id="ed-cortesia" value="${e.cortesia||0}" step="0.01"></div>
+        <div class="fg"><label>Crédito (R$)</label><input type="number" id="ed-credito" value="${e.credito||0}" step="0.01"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Débito (R$)</label><input type="number" id="ed-debito" value="${e.debito||0}" step="0.01"></div>
+        <div class="fg"><label>Dinheiro (R$)</label><input type="number" id="ed-dinheiro" value="${e.dinheiro||0}" step="0.01"></div>
+        <div class="fg"><label>Pix / QR (R$)</label><input type="number" id="ed-pix" value="${e.pix||0}" step="0.01"></div>
+      </div>
+    `;
+  } else if(tipo==='conta'){
+    const c = ST.contas.find(x=>x.id===id);
+    if(!c) return;
+    titulo.textContent = 'Editar conta a pagar';
+    const bloqueado = c.status==='pago';
+    body.innerHTML = `
+      <div class="frow">
+        <div class="fg"><label>Descrição</label><input type="text" id="ed-desc" value="${c.descricao||''}" ${bloqueado?'readonly':''}></div>
+        <div class="fg"><label>Valor (R$)</label><input type="number" id="ed-valor" value="${c.valor||0}" step="0.01" ${bloqueado?'readonly':''}></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Vencimento</label><input type="date" id="ed-venc" value="${c.vencimento||''}" ${bloqueado?'readonly':''}></div>
+        <div class="fg"><label>Observação</label><input type="text" id="ed-obs" value="${c.obs||''}"></div>
+      </div>
+      ${bloqueado?'<div style="font-size:11px;color:var(--muted);padding:8px;background:var(--neu-l);border-radius:8px"><i class="ti ti-lock" style="font-size:12px"></i> Conta já paga — apenas observação pode ser alterada.</div>':''}
+    `;
+  }
+  overlay.classList.add('show');
+}
+
+closeEdit = () => {
+  document.getElementById('edit-overlay').classList.remove('show');
+  editCtx = null;
+};
+
+saveEdit = async() => {
+  if(!editCtx) return;
+  setSyncStatus('loading');
+  document.getElementById('btn-edit-save').disabled = true;
+  const {tipo, id} = editCtx;
+
+  try{
+    if(tipo==='saida'){
+      await updateDoc(doc(db,'saidas',id),{
+        data: document.getElementById('ed-data').value,
+        tipo: document.getElementById('ed-tipo').value,
+        valor: R(parseFloat(document.getElementById('ed-valor').value)||0),
+        descricao: document.getElementById('ed-desc').value.trim()
+      });
+    } else if(tipo==='entrada'){
+      await setDoc(doc(db,'entradas',id),{
+        data: id,
+        prazo: R(parseFloat(document.getElementById('ed-prazo').value)||0),
+        cortesia: R(parseFloat(document.getElementById('ed-cortesia').value)||0),
+        credito: R(parseFloat(document.getElementById('ed-credito').value)||0),
+        debito: R(parseFloat(document.getElementById('ed-debito').value)||0),
+        dinheiro: R(parseFloat(document.getElementById('ed-dinheiro').value)||0),
+        pix: R(parseFloat(document.getElementById('ed-pix').value)||0),
+      });
+    } else if(tipo==='conta'){
+      const c = ST.contas.find(x=>x.id===id);
+      const bloqueado = c && c.status==='pago';
+      const upd = {obs: document.getElementById('ed-obs').value.trim()};
+      if(!bloqueado){
+        upd.valor = R(parseFloat(document.getElementById('ed-valor').value)||0);
+        upd.vencimento = document.getElementById('ed-venc').value;
+        upd.descricao = document.getElementById('ed-desc').value.trim();
+      }
+      await updateDoc(doc(db,'contas',id), upd);
+    }
+    closeEdit();
+    toast('Lançamento atualizado!');
+  } catch(e){
+    toast('Erro ao salvar: '+e.message, true);
+  }
+  document.getElementById('btn-edit-save').disabled = false;
+};
+
 // ── POPUP LANÇAMENTO RÁPIDO ───────────────────────────────
 let psMod = 'avista';
 let psMesesSelecionados = 6;
@@ -1213,6 +1370,9 @@ window.onCpTipoChange_fn = onCpTipoChange;
 window.selectCpMeses_fn = selectCpMeses;
 window.saveConta_fn = saveConta;
 window.clearConta_fn = clearConta;
+window.closeEdit_fn = closeEdit;
+window.saveEdit_fn = saveEdit;
+window.openEdit_fn = openEdit;
 
 
 openPopup = () => {
@@ -1480,6 +1640,124 @@ async function seedMetas(){
 }
 
 // ── RENDER SAÚDE ────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════
+// ITEM 18: PROJEÇÃO SAZONAL + TERMÔMETRO + SEMÁFORO
+// ═══════════════════════════════════════════════════════════
+function calcProjecao(){
+  const hoje = today();
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+
+  // 1. Índices sazonais por dia da semana (histórico completo, excluindo mês atual)
+  const indices = [0,1,2,3,4,5,6].map(dw=>{
+    const vals = ST.entradas
+      .filter(e=>{
+        if(e.data.startsWith(mesFiltro)) return false; // excluir mês atual
+        return dweek(e.data) === dw;
+      })
+      .map(e=>R((e.prazo||0)+(e.cortesia||0)+(e.credito||0)+(e.debito||0)+(e.dinheiro||0)+(e.pix||0)));
+
+    if(!vals.length) return 0;
+
+    // IQR para excluir outliers
+    const sorted = [...vals].sort((a,b)=>a-b);
+    const q1 = sorted[Math.floor(sorted.length*0.25)];
+    const q3 = sorted[Math.floor(sorted.length*0.75)];
+    const iqr = q3-q1;
+    const filtered = sorted.filter(v=>v>=q1-1.5*iqr && v<=q3+1.5*iqr);
+    return filtered.length ? R(filtered.reduce((a,b)=>a+b,0)/filtered.length) : R(vals.reduce((a,b)=>a+b,0)/vals.length);
+  });
+
+  // 2. Dias lançados no mês atual
+  const diasLancados = ST.entradas.filter(e=>e.data.startsWith(mesFiltro)).sort((a,b)=>a.data.localeCompare(b.data));
+  const realizadoTotal = R(diasLancados.reduce((a,e)=>a+totalE(e.data),0));
+
+  // 3. Fator do mês atual
+  let somaIndicesLancados = 0;
+  diasLancados.forEach(e=>{
+    const dw = dweek(e.data);
+    somaIndicesLancados += indices[dw]||0;
+  });
+  const fator = somaIndicesLancados>0 ? realizadoTotal/somaIndicesLancados : 1;
+
+  // 4. Projetar dias restantes
+  let projecaoRestante = 0;
+  for(let d=1;d<=diasNoMes;d++){
+    const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
+    if(dataStr > hoje || !ST.entradas.find(e=>e.data===dataStr)){
+      const dw = dweek(dataStr);
+      projecaoRestante += (indices[dw]||0) * fator;
+    }
+  }
+  const projecaoTotal = R(realizadoTotal + projecaoRestante);
+
+  // 5. Score de confiabilidade
+  let score = 0;
+  const nDias = diasLancados.length;
+  if(nDias>=14) score+=25; else if(nDias>=7) score+=15;
+  const temSab = diasLancados.some(e=>dweek(e.data)===6);
+  const temDom = diasLancados.some(e=>dweek(e.data)===0);
+  if(temSab && temDom) score+=20; else if(temSab||temDom) score+=10;
+  const mesesHistorico = [...new Set(ST.entradas.map(e=>e.data.slice(0,7)).filter(m=>m!==mesFiltro))].length;
+  if(mesesHistorico>=3) score+=15; else if(mesesHistorico>=2) score+=10; else if(mesesHistorico>=1) score+=5;
+  // Verificar estabilidade do fator (últimas 2 semanas)
+  if(nDias>=14){
+    const semana1 = diasLancados.slice(0,7);
+    const semana2 = diasLancados.slice(7,14);
+    const f1 = R(semana1.reduce((a,e)=>a+totalE(e.data),0)) / R(semana1.reduce((a,e)=>a+(indices[dweek(e.data)]||1),0));
+    const f2 = R(semana2.reduce((a,e)=>a+totalE(e.data),0)) / R(semana2.reduce((a,e)=>a+(indices[dweek(e.data)]||1),0));
+    if(Math.abs(f1-f2)/Math.max(f1,f2)<0.05) score+=20; else if(Math.abs(f1-f2)/Math.max(f1,f2)<0.10) score+=10;
+  }
+  // Penalidades
+  const outlierDetectado = ST.entradas.some(e=>{
+    const v=totalE(e.data); return v>5000;
+  });
+  if(outlierDetectado) score-=8;
+  if(fator>1.3||fator<0.7) score-=10;
+  score = Math.max(0, Math.min(100, score));
+
+  // 6. Meta do mês
+  const metaDias = Array.from({length:diasNoMes},(_,i)=>ay+'-'+am+'-'+String(i+1).padStart(2,'0'));
+  const metaTotal = R(metaDias.reduce((a,d)=>a+(getMeta(d)||0),0));
+
+  // 7. Semáforo
+  let semaforoClass='warn', semaforoPct='?';
+  if(score>=40 && metaTotal>0){
+    const desvio = (projecaoTotal-metaTotal)/metaTotal;
+    if(desvio>=0.03){semaforoClass='ok';semaforoPct='+'+Math.round(desvio*100)+'%';}
+    else if(desvio>=-0.03){semaforoClass='warn';semaforoPct=Math.round(desvio*100)+'%';}
+    else{semaforoClass='err';semaforoPct=Math.round(desvio*100)+'%';}
+  } else if(score<40){
+    semaforoClass='warn';semaforoPct='?';
+  }
+
+  return {projecaoTotal, score, fator, nDias, metaTotal, semaforoClass, semaforoPct, diasNoMes};
+}
+
+function renderSemaforo(cls,pct){
+  const verde = cls==='ok' ? 'active-green' : '';
+  const amarelo = cls==='warn' ? 'active-yellow' : '';
+  const vermelho = cls==='err' ? 'active-red' : '';
+  return `<div class="semaforo" aria-label="Semáforo: ${cls==='ok'?'verde':cls==='warn'?'amarelo':'vermelho'}">
+    <div class="sem-luz ${vermelho}"></div>
+    <div class="sem-luz ${amarelo}"></div>
+    <div class="sem-luz ${verde}"></div>
+    <div class="sem-pct">${pct}</div>
+  </div>`;
+}
+
+function renderTermometro(score){
+  const cls = score>=70?'ok':score>=40?'warn':'err';
+  const label = score>=70?'Alta':'score'>=40?'Moderada':'Baixa';
+  const lbl = score>=70?'Alta':score>=40?'Moderada':'Baixa';
+  return `<div class="termo-row">
+    <span style="font-size:10px;color:var(--muted)">Confiabilidade</span>
+    <span class="termo-badge ${cls}">${lbl} · ${score}%</span>
+  </div>
+  <div class="termo-track"><div class="termo-fill ${cls}" style="width:${score}%"></div></div>`;
+}
+
 function renderSaude(){
   const dates=datesDoMes();
   let tE=0,tS=0;
@@ -1498,11 +1776,21 @@ function renderSaude(){
     rows.push({d,e,s,sal,showW,lastQ,lastM,wv:wAcc[wk],qv:qAcc[qz],mv:mAcc[ms]});
   });
   const saldo=R(tE-tS);
+  // Calcular projeção
+  const proj = calcProjecao();
+  const vsMetaStr = proj.metaTotal>0 ? (proj.projecaoTotal>=proj.metaTotal?'+':'')+brl(proj.projecaoTotal-proj.metaTotal)+' vs meta' : 'Meta não configurada';
+
   document.getElementById('kpi-saude').innerHTML=`
     <div class="kpi ok"><div class="kpi-label">Total entradas</div><div class="kpi-val ok">${brl(tE)}</div><div class="kpi-sub"><span class="pill ok">Receitas</span></div></div>
     <div class="kpi err"><div class="kpi-label">Total saídas</div><div class="kpi-val err">${brl(tS)}</div><div class="kpi-sub"><span class="pill err">Despesas</span></div></div>
     <div class="kpi ${saldo>=0?'ok':'err'}"><div class="kpi-label">Saldo do período</div><div class="kpi-val ${saldo>=0?'ok':'err'}">${saldo<0?'-':''}${brl(saldo)}</div><div class="kpi-sub"><span class="pill ${saldo>0?'ok':saldo<0?'err':'neu'}">${saldo>0?'Positivo':saldo<0?'Negativo':'Zerado'}</span></div></div>
-    <div class="kpi"><div class="kpi-label">Dias registrados</div><div class="kpi-val">${ST.entradas.length}</div><div class="kpi-sub"><span class="pill neu">no período</span></div></div>
+    <div class="kpi-proj ${proj.semaforoClass}">
+      ${renderSemaforo(proj.semaforoClass, proj.semaforoPct)}
+      <div class="kpi-label" style="padding-right:32px">Projeção do mês</div>
+      <div class="kpi-val" style="padding-right:32px">${brl(proj.projecaoTotal)}</div>
+      <div style="font-size:11px;color:var(--muted);margin:4px 0 0;padding-right:32px">${vsMetaStr}</div>
+      ${renderTermometro(proj.score)}
+    </div>
   `;
   const tbody=document.getElementById('tb-saude');
   if(!dates.length){tbody.innerHTML='<tr><td colspan="11" class="empty">Nenhum lançamento ainda.</td></tr>';return;}
@@ -1517,7 +1805,7 @@ function renderSaude(){
   </tr>`).join('');
   const ld=dates.slice(-14);
   const lbl=ld.map(d=>{const[,m,dd]=d.split('-');return dd+'/'+m;});
-  mkChart('ch-evs',{type:'bar',data:{labels:lbl,datasets:[{label:'Entradas',data:ld.map(totalE),backgroundColor:'#7C5C3E',borderRadius:3},{label:'Saídas',data:ld.map(totalS),backgroundColor:'#C0392B',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR},grid:{display:false}},y:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  mkChart('ch-evs',{type:'bar',data:{labels:lbl,datasets:[{label:'Entradas',data:ld.map(totalEMes),backgroundColor:'#7C5C3E',borderRadius:3},{label:'Saídas',data:ld.map(totalSMes),backgroundColor:'#C0392B',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR},grid:{display:false}},y:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
   let acc=0;const accV=datesDoMes().slice(-14).map(d=>{acc+=totalEMes(d)-totalSMes(d);return R(acc);});
   mkChart('ch-saldo',{type:'line',data:{labels:lbl,datasets:[{label:'Saldo',data:accV,borderColor:'#2E7D52',backgroundColor:'rgba(46,125,82,.1)',tension:.35,fill:true,pointRadius:4,pointBackgroundColor:'#2E7D52',pointBorderColor:'#fff',pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR},grid:{display:false}},y:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
@@ -1542,7 +1830,7 @@ function renderEntradas(){
   tbody.innerHTML=sorted.map(e=>{
     const tot=R(campos.reduce((a,c)=>a+R(e[c]||0),0));
     const pp=c=>tot>0?pct(R(e[c]||0)/tot*100):'0 %';
-    return`<tr class="${rclass(e.data)}"><td>${dlabel(e.data)}</td>${campos.map(c=>`<td>${brl(e[c]||0)}</td><td class="td-mut">${pp(c)}</td>`).join('')}<td class="td-pos" style="font-weight:600">${brl(tot)}</td></tr>`;
+    return`<tr class="${rclass(e.data)}"><td>${dlabel(e.data)}</td>${campos.map(c=>`<td>${brl(e[c]||0)}</td><td class="td-mut">${pp(c)}</td>`).join('')}<td class="td-pos" style="font-weight:600">${brl(tot)}</td><td><button class="fbtn" style="padding:3px 8px;font-size:11px;color:var(--br)" onclick="openEdit('entrada','${e.data}')" aria-label="Editar"><i class="ti ti-edit"></i></button></td></tr>`;
   }).join('');
 }
 
@@ -1571,7 +1859,10 @@ function renderSaidas(){
     <td class="td-mut" style="font-size:11px">${GMAP[x.grupo]||x.grupo}</td>
     <td class="td-neg">${brl(x.valor)}</td>
     <td class="td-mut">${x.descricao||'—'}</td>
-    <td><button class="fbtn danger" style="padding:4px 10px;font-size:11px" onclick="window._delSaida('${x.id}')"><i class="ti ti-trash"></i></button></td>
+    <td style="display:flex;gap:4px">
+      <button class="fbtn" style="padding:4px 10px;font-size:11px;color:var(--br)" onclick="openEdit('saida','${x.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button>
+      <button class="fbtn danger" style="padding:4px 10px;font-size:11px" onclick="window._delSaida('${x.id}')" aria-label="Excluir"><i class="ti ti-trash"></i></button>
+    </td>
   </tr>`).join('');
 }
 
@@ -1678,6 +1969,7 @@ function renderContas(){
         ${isPago
           ?`<button class="fbtn danger" style="padding:5px 10px;font-size:11px" onclick="window._delConta('${c.id}')"><i class="ti ti-trash"></i></button>`
           :`<button class="fbtn ok-btn" style="padding:5px 12px;font-size:11px" onclick="window._pagarConta('${c.id}')"><i class="ti ti-check"></i> Pagar</button>
+           <button class="fbtn" style="padding:5px 10px;font-size:11px;color:var(--br)" onclick="openEdit('conta','${c.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button>
            <button class="fbtn danger" style="padding:5px 10px;font-size:11px" onclick="window._delConta('${c.id}')"><i class="ti ti-trash"></i></button>`
         }
       </div>
