@@ -1885,6 +1885,13 @@ function calcProjecao(){
     else{semaforoClass='err';semaforoPct=Math.round(desvio*100)+'%';}
   }
 
+  // Se não há nenhum dia lançado no mês atual, score máximo é 15
+  if(nDias===0){
+    score=Math.min(score,15);
+    semaforoClass='warn';
+    semaforoPct='?';
+  }
+
   return {projecaoTotal, score, fator, nDias, metaTotal, semaforoClass, semaforoPct, diasNoMes, feriadosExpirados, feriadosNoMes};
 }
 
@@ -1970,24 +1977,33 @@ function renderSaude(){
   // Calcular máximo para escala Y sem duplicatas
   const evsE=ld.map(totalEMes);
   const evsS=ld.map(totalSMes);
-  const maxVal=Math.max(...evsE,...evsS,1);
-  const yStepSize=maxVal>5000?1000:maxVal>2000?500:200;
+  const maxVal=Math.max(...evsE,...evsS,1000);
+  // Calcular stepSize redondo para evitar labels fracionados
+  function niceStep(max,steps){
+    const raw=max/steps;
+    const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+    const nice=[1,2,2.5,5,10].map(x=>x*mag).find(x=>x>=raw)||mag*10;
+    return nice;
+  }
+  const yStep=niceStep(maxVal,5);
+  const yMax=Math.ceil(maxVal/yStep)*yStep;
 
   mkChart('ch-evs',{type:'bar',data:{labels:lbl,datasets:[
     {label:'Entradas',data:evsE,backgroundColor:'#7C5C3E',borderRadius:2},
     {label:'Saídas',data:evsS,backgroundColor:'#C0392B',borderRadius:2}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
     x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},
-    y:{ticks:{font:{size:10},color:CGR,count:6,callback:v=>{
-      if(v>=1000) return 'R$'+Math.round(v/1000)+'k';
-      return v>0?'R$'+v:'R$0';
+    y:{min:0,max:yMax,ticks:{font:{size:10},color:CGR,stepSize:yStep,callback:v=>{
+      if(v>=1000) return 'R$'+(v/1000)+'k';
+      return 'R$'+v;
     }},grid:{color:'rgba(0,0,0,.05)'}}
   }}});
 
   let acc=0;
   const accV=ld.map(d=>{acc=R(acc+totalEMes(d)-totalSMes(d));return acc;});
-  const maxAcc=Math.max(...accV.map(Math.abs),1);
-  const yStepAcc=maxAcc>10000?5000:maxAcc>5000?2000:1000;
+  const maxAcc=Math.max(...accV.map(Math.abs),1000);
+  const accStep=niceStep(maxAcc,5);
+  const accMax=Math.ceil(maxAcc/accStep)*accStep;
   mkChart('ch-saldo',{type:'line',data:{labels:lbl,datasets:[{
     label:'Saldo',data:accV,borderColor:'#2E7D52',
     backgroundColor:'rgba(46,125,82,.1)',tension:.35,fill:true,
@@ -1995,9 +2011,9 @@ function renderSaude(){
     pointBorderColor:'#fff',pointBorderWidth:2
   }]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
     x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},
-    y:{ticks:{font:{size:10},color:CGR,count:6,callback:v=>{
-      if(Math.abs(v)>=1000) return 'R$'+(v/1000).toFixed(0)+'k';
-      return v>0?'R$'+v:'R$0';
+    y:{min:0,max:accMax,ticks:{font:{size:10},color:CGR,stepSize:accStep,callback:v=>{
+      if(v>=1000) return 'R$'+(v/1000)+'k';
+      return 'R$'+v;
     }},grid:{color:'rgba(0,0,0,.05)'}}
   }}});
 }
