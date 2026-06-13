@@ -1076,7 +1076,25 @@ function totalS(d){return R(ST.saidas.filter(x=>x.data===d).reduce((a,b)=>a+R(b.
 function getMeta(d){const m=ST.metas.find(x=>x.data===d);return m?R(m.valor):METAS_MAIO[d]||0;}
 function dotR(v){if(v>0)return'<span class="dot ok"></span> Positivo';if(v<0)return'<span class="dot err"></span> Negativo';return'<span class="dot neu"></span> Zerado';}
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
-function mkChart(id,cfg){destroyChart(id);const el=document.getElementById(id);if(el)charts[id]=new Chart(el,cfg);}
+function mkChart(id,cfg){
+  destroyChart(id);
+  const el=document.getElementById(id);
+  if(!el)return;
+  // Se não há dados, limpar canvas e mostrar mensagem vazia
+  const temDados = cfg.data && cfg.data.labels && cfg.data.labels.length>0;
+  if(!temDados){
+    const ctx=el.getContext('2d');
+    ctx.clearRect(0,0,el.width,el.height);
+    ctx.save();
+    ctx.font='13px Inter,sans-serif';
+    ctx.fillStyle='#9E7A56';
+    ctx.textAlign='center';
+    ctx.fillText('Sem dados para o período selecionado',el.width/2,el.height/2);
+    ctx.restore();
+    return;
+  }
+  charts[id]=new Chart(el,cfg);
+}
 function todayLocal(){
   const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1958,7 +1976,7 @@ function renderSaude(){
     {label:'Saídas',data:evsS,backgroundColor:'#C0392B',borderRadius:2}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
     x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},
-    y:{ticks:{font:{size:10},color:CGR,stepSize:yStepSize,callback:v=>{
+    y:{ticks:{font:{size:10},color:CGR,count:6,callback:v=>{
       if(v>=1000) return 'R$'+Math.round(v/1000)+'k';
       return v>0?'R$'+v:'R$0';
     }},grid:{color:'rgba(0,0,0,.05)'}}
@@ -1975,7 +1993,7 @@ function renderSaude(){
     pointBorderColor:'#fff',pointBorderWidth:2
   }]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
     x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},
-    y:{ticks:{font:{size:10},color:CGR,stepSize:yStepAcc,callback:v=>{
+    y:{ticks:{font:{size:10},color:CGR,count:6,callback:v=>{
       if(Math.abs(v)>=1000) return 'R$'+(v/1000).toFixed(0)+'k';
       return v>0?'R$'+v:'R$0';
     }},grid:{color:'rgba(0,0,0,.05)'}}
@@ -2093,18 +2111,23 @@ function renderMeta(){
 // ── RENDER CONTAS A PAGAR ────────────────────────────────
 function renderContas(){
   const td=today();
-  // Filtrar pelo mês selecionado
+  // Filtrar pelo mês selecionado — incluindo cartões pelo vencimento
   const todasContas=[...ST.contas].sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
   const contas=todasContas.filter(c=>c.vencimento&&c.vencimento.startsWith(mesFiltro));
   const pendentes=contas.filter(c=>c.status!=='pago');
   const pagas=contas.filter(c=>c.status==='pago');
-  const atrasadas=pendentes.filter(c=>c.vencimento<td&&c.modalidade!=='santander'&&c.modalidade!=='amex');
-  const semana=pendentes.filter(c=>{const diff=diffDays(c.vencimento,td);return diff>=0&&diff<=7&&c.modalidade!=='santander'&&c.modalidade!=='amex';});
-  const resto=pendentes.filter(c=>{const diff=diffDays(c.vencimento,td);return (diff>7||c.vencimento<td)&&c.modalidade!=='santander'&&c.modalidade!=='amex'&&!atrasadas.find(x=>x.id===c.id);});
+  // Separar cartões dos demais para exibição diferenciada
+  const isCard=c=>c.modalidade==='santander'||c.modalidade==='amex';
+  const atrasadas=pendentes.filter(c=>c.vencimento<td&&!isCard(c));
+  const semana=pendentes.filter(c=>{const diff=diffDays(c.vencimento,td);return diff>=0&&diff<=7;});
+  const resto=pendentes.filter(c=>{
+    const diff=diffDays(c.vencimento,td);
+    return diff>7&&!atrasadas.find(x=>x.id===c.id);
+  });
 
   const totalAtraso=R(atrasadas.reduce((a,b)=>a+R(b.valor),0));
   const totalSemana=R(semana.reduce((a,b)=>a+R(b.valor),0));
-  const totalMes=R(pendentes.reduce((a,b)=>a+R(b.valor),0));
+  const totalMes=R(pendentes.reduce((a,b)=>a+R(b.valor),0)); // inclui cartões
   const totalPago=R(pagas.reduce((a,b)=>a+R(b.valor),0));
 
   document.getElementById('kpi-contas').innerHTML=`
