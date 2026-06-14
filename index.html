@@ -990,6 +990,12 @@ select option{font-weight:400;color:#1A1210}
 </div>
 
 <script>
+// Utilitário — adiciona listener apenas se elemento existir
+function safeOn(id, evt, fn){
+  const el = document.getElementById(id);
+  if(el) el.addEventListener(evt, fn);
+}
+
 // Firebase SDK compat — usa firebase global carregado pelos scripts CDN acima
 const initializeApp = (cfg) => firebase.initializeApp(cfg);
 const getFirestore = (app) => app.firestore();
@@ -1643,7 +1649,7 @@ doLogout=async()=>{
 showView=showView;
 
 // Enter para logar
-safeOn('login-pass','keydown',e=>{if(e.key==='Enter')window.doLogin();});
+safeOn('login-pass','keydown',e=>{if(e.key==='Enter')doLogin();});
 safeOn('login-email','keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
 
 let _listenersInited = false;
