@@ -990,9 +990,21 @@ select option{font-weight:400;color:#1A1210}
 </div>
 
 <script>
-const { initializeApp } = firebaseApp;
-const { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } = firebaseFirestore;
-const { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } = firebaseAuth;
+// Firebase SDK compat — usa firebase global carregado pelos scripts CDN acima
+const initializeApp = (cfg) => firebase.initializeApp(cfg);
+const getFirestore = (app) => app.firestore();
+const collection = (db, col) => db.collection(col);
+const doc = (db, col, id) => db.collection(col).doc(id);
+const setDoc = (ref, data) => ref.set(data);
+const addDoc = (ref, data) => ref.add(data);
+const deleteDoc = (ref) => ref.delete();
+const updateDoc = (ref, data) => ref.update(data);
+const onSnapshot = (ref, cb, err) => ref.onSnapshot(cb, err);
+const getAuth = (app) => app.auth();
+const signInWithEmailAndPassword = (auth, email, pass) => auth.signInWithEmailAndPassword(email, pass);
+const signOut = (auth) => auth.signOut();
+const sendPasswordResetEmail = (auth, email) => auth.sendPasswordResetEmail(email);
+const onAuthStateChanged = (auth, cb) => auth.onAuthStateChanged(cb);
 
 const firebaseConfig = {
   apiKey: "AIzaSyC2ki-hUKAzEIxsvMUAqR19yvJ0D7GCq7w",
