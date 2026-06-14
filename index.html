@@ -379,14 +379,21 @@ select option{font-weight:400;color:#1A1210}
 .cal-cell.tem-contas:hover{border-color:var(--br-l);background:var(--br-xl)}
 .cal-num{font-size:11px;font-weight:500;color:var(--muted);margin-bottom:3px}
 .cal-cell.hoje .cal-num{color:var(--br-d);font-weight:600}
-.cal-pill{font-size:9px;font-weight:500;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
-.cal-pill.pendente{background:#FEF8E7;color:#633806}
-.cal-pill.atrasado{background:#FCEBEB;color:#791F1F}
-.cal-pill.pago{background:#EAF3DE;color:#27500A;opacity:.7}
-.cal-dia-total{font-size:9px;font-weight:500;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cal-dia-total.atrasado{color:#A32D2D}
-.cal-dia-total.pendente{color:#633806}
-.cal-dia-total.pago{color:#27500A}
+.cal-pill{display:flex;align-items:center;gap:4px;border-radius:20px;padding:2px 6px 2px 4px;margin-bottom:2px}
+.cal-pill.pg{background:#EAF3DE}
+.cal-pill.pd{background:#FAEEDA}
+.cal-pill.at{background:#FCEBEB}
+.cal-pill.tot{background:#E8E6E1}
+.cal-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cal-dot.pg{background:#639922}
+.cal-dot.pd{background:#BA7517}
+.cal-dot.at{background:#E24B4A}
+.cal-plabel{font-size:9px;font-weight:500;color:#5F5E5A}
+.cal-pval{font-size:9px;font-weight:500;flex:1;text-align:right}
+.cal-pval.pg{color:#27500A}
+.cal-pval.pd{color:#633806}
+.cal-pval.at{color:#791F1F}
+.cal-pval.tot{color:#444441}
 .cal-legenda{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .cal-leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
 .cal-leg-sq{width:10px;height:10px;border-radius:2px}
@@ -2350,23 +2357,25 @@ function renderCalendarioContas(contas){
     const temContas = cs.length > 0;
 
     // Calcular totais por status
-    const totPendente = R(cs.filter(c=>c.status!=='pago'&&c.vencimento>=td).reduce((a,c)=>a+R(c.valor||0),0));
     const totAtrasado = R(cs.filter(c=>c.status!=='pago'&&c.vencimento<td).reduce((a,c)=>a+R(c.valor||0),0));
-    const totPago = R(cs.filter(c=>c.status==='pago').reduce((a,c)=>a+R(c.valor||0),0));
+    const totPendente = R(cs.filter(c=>c.status!=='pago'&&c.vencimento>=td).reduce((a,c)=>a+R(c.valor||0),0));
+    const totPago     = R(cs.filter(c=>c.status==='pago').reduce((a,c)=>a+R(c.valor||0),0));
+    const totGeral    = R(totAtrasado + totPendente + totPago);
 
     let cls = 'cal-cell';
     if(isHoje) cls += ' hoje';
     if(temContas) cls += ' tem-contas';
 
-    // Mostrar totais por status no dia
-    let totais = '';
-    if(totAtrasado>0) totais += `<div class="cal-dia-total atrasado">Em atraso: ${brl(totAtrasado)}</div>`;
-    if(totPendente>0) totais += `<div class="cal-dia-total pendente">Pend: ${brl(totPendente)}</div>`;
-    if(totPago>0) totais += `<div class="cal-dia-total pago">Pago: ${brl(totPago)}</div>`;
+    // Pílulas por status + pílula cinza de total
+    let pills = '';
+    if(totAtrasado>0) pills += `<div class="cal-pill at"><span class="cal-dot at"></span><span class="cal-pval at">${brl(totAtrasado)}</span></div>`;
+    if(totPendente>0) pills += `<div class="cal-pill pd"><span class="cal-dot pd"></span><span class="cal-pval pd">${brl(totPendente)}</span></div>`;
+    if(totPago>0)     pills += `<div class="cal-pill pg"><span class="cal-dot pg"></span><span class="cal-pval pg">${brl(totPago)}</span></div>`;
+    if(totGeral>0)    pills += `<div class="cal-pill tot"><span class="cal-plabel">Total</span><span class="cal-pval tot">${brl(totGeral)}</span></div>`;
 
     html += `<div class="${cls}" onclick="scrollToDay('${dataStr}')">
       <div class="cal-num">${d}</div>
-      ${totais}
+      ${pills}
     </div>`;
   }
 
