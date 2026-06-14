@@ -1119,28 +1119,33 @@ function getMeta(d){const m=ST.metas.find(x=>x.data===d);return m?R(m.valor):MET
 function dotR(v){if(v>0)return'<span class="dot ok"></span> Positivo';if(v<0)return'<span class="dot err"></span> Negativo';return'<span class="dot neu"></span> Zerado';}
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 function mkChart(id,cfg){
-  // Destruir instância anterior do Chart.js
+  // Destruir instância Chart.js anterior
   destroyChart(id);
 
-  // Substituir o canvas por um novo — única forma garantida de limpar completamente
-  const container = document.getElementById(id)?.parentElement;
-  if(!container) return;
+  // Localizar o container pelo ID do canvas
   const old = document.getElementById(id);
-  if(old) old.remove();
+  if(!old) return;
+  const container = old.parentElement;
+  if(!container) return;
+
+  // Limpar container completamente e criar novo canvas
+  container.innerHTML = '';
   const novo = document.createElement('canvas');
   novo.id = id;
+  novo.style.width = '100%';
+  novo.style.height = '100%';
   container.appendChild(novo);
 
-  // Verificar se há labels E pelo menos 1 valor real (> 0)
+  // Verificar se há valores reais (não apenas labels)
   const labels = cfg.data?.labels || [];
-  const valores = (cfg.data?.datasets || []).flatMap(ds=>ds.data||[]);
-  const temDados = labels.length > 0 && valores.some(v=>v > 0);
+  const valores = (cfg.data?.datasets || []).flatMap(ds => ds.data || []);
+  const temDados = labels.length > 0 && valores.some(v => (v || 0) > 0);
 
   if(!temDados){
-    requestAnimationFrame(()=>{
-      const ctx = novo.getContext('2d');
-      novo.width = container.offsetWidth || 400;
+    requestAnimationFrame(() => {
+      novo.width  = container.offsetWidth  || 400;
       novo.height = container.offsetHeight || 200;
+      const ctx = novo.getContext('2d');
       ctx.font = '13px Inter,sans-serif';
       ctx.fillStyle = '#9E7A56';
       ctx.textAlign = 'center';
