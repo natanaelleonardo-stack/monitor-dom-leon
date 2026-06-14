@@ -1207,7 +1207,7 @@ function atualizaLabelMes(){
   atualizaBtnHoje();
 }
 
-navMes = (dir) => {
+_navMes_int = (dir) => {
   const[y,m] = mesFiltro.split('-');
   let nm = parseInt(m) + dir;
   let ny = parseInt(y);
@@ -1220,7 +1220,7 @@ navMes = (dir) => {
   checkAlertasRecorrentes();
 };
 
-navHoje = () => {
+_navHoje_int = () => {
   const hj = new Date();
   mesFiltro = hj.getFullYear() + '-' + String(hj.getMonth()+1).padStart(2,'0');
   atualizaLabelMes();
@@ -1278,7 +1278,7 @@ let mesesSelecionados = 6;
 let estMesesSel = 0;
 let estRecorrenteId = null;
 
-selectMeses = (n, btn) => {
+_selectMeses_int = (n, btn) => {
   mesesSelecionados = n;
   document.querySelectorAll('#meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -1300,7 +1300,7 @@ function onTipoChangeRecorrente(){
 // ═══════════════════════════════════════════════════════════
 // MODAL ESTENDER RECORRENTE
 // ═══════════════════════════════════════════════════════════
-abrirEstender = (recId) => {
+_abrirEstender_int = (recId) => {
   estRecorrenteId = recId;
   const saidas = ST.saidas.filter(s=>s.recorrente_id===recId).sort((a,b)=>a.data.localeCompare(b.data));
   if(!saidas.length) return;
@@ -1320,11 +1320,11 @@ abrirEstender = (recId) => {
   document.getElementById('modal-estender').classList.add('show');
 };
 
-closeModalEstender = () => {
+_closeModalEstender_int = () => {
   document.getElementById('modal-estender').classList.remove('show');
 };
 
-selectEstMeses = (n, btn) => {
+_selectEstMeses_int = (n, btn) => {
   estMesesSel = n;
   document.querySelectorAll('#est-meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -1332,7 +1332,7 @@ selectEstMeses = (n, btn) => {
 };
 
 
-saveEstender = async() => {
+_saveEstender_int = async() => {
   const meses = estMesesSel || parseInt(document.getElementById('est-meses-input').value)||0;
   if(!meses||meses<1){toast('Informe quantos meses adicionar.',true);return;}
   const tipo = document.getElementById('est-tipo').value;
@@ -1364,7 +1364,7 @@ saveEstender = async() => {
     }
   }
   document.getElementById('btn-estender').disabled=false;
-  closeModalEstender();
+  _closeModalEstender_int();
   toast(meses+' meses adicionados com sucesso!');
 };
 
@@ -1429,12 +1429,12 @@ function openEdit(tipo, id){
   overlay.classList.add('show');
 }
 
-closeEdit = () => {
+_closeEdit_int = () => {
   document.getElementById('edit-overlay').classList.remove('show');
   editCtx = null;
 };
 
-saveEdit = async() => {
+_saveEdit_int = async() => {
   if(!editCtx) return;
   setSyncStatus('loading');
   document.getElementById('btn-edit-save').disabled = true;
@@ -1469,7 +1469,7 @@ saveEdit = async() => {
       }
       await updateDoc(doc(db,'contas',id), upd);
     }
-    closeEdit();
+    _closeEdit_int();
     toast('Lançamento atualizado!');
   } catch(e){
     toast('Erro ao salvar: '+e.message, true);
@@ -1481,7 +1481,7 @@ saveEdit = async() => {
 let psMod = 'avista';
 let psMesesSelecionados = 6;
 
-selectPsMeses = (n, btn) => {
+_selectPsMeses_int = (n, btn) => {
   psMesesSelecionados = n;
   document.querySelectorAll('#ps-meses-btns .p-mod').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -1489,29 +1489,29 @@ selectPsMeses = (n, btn) => {
 };
 
 
-openPopup = () => {
+_openPopup_int = () => {
   const hj = todayLocal();
   document.getElementById('ps-data').value = hj;
   document.getElementById('pe-data').value = hj;
   document.getElementById('popup-rapido').classList.add('show');
 };
 
-closePopup = () => {
+_closePopup_int = () => {
   document.getElementById('popup-rapido').classList.remove('show');
 };
 
 safeOn('popup-rapido','click', e => {
-  if(e.target === document.getElementById('popup-rapido')) closePopup();
+  if(e.target === document.getElementById('popup-rapido')) _closePopup_int();
 });
 
-switchPopupTab = (tab) => {
+_switchPopupTab_int = (tab) => {
   document.getElementById('popup-saida-body').style.display = tab==='saida'?'block':'none';
   document.getElementById('popup-entrada-body').style.display = tab==='entrada'?'block':'none';
   document.getElementById('ptab-saida').className = 'ptab' + (tab==='saida'?' on':'');
   document.getElementById('ptab-entrada').className = 'ptab' + (tab==='entrada'?' on':'');
 };
 
-selectPsMod = (mod, btn) => {
+_selectPsMod_int = (mod, btn) => {
   psMod = mod;
   document.querySelectorAll('#ps-mod-row .p-mod').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -1519,7 +1519,7 @@ selectPsMod = (mod, btn) => {
   if(mod !== 'avista') calcPsVenc();
 };
 
-onPsTipoChange = () => {
+_onPsTipoChange_int = () => {
   if(psMod !== 'avista') calcPsVenc();
   // Detectar Op. Fixas / Pessoal no popup
   const raw = document.getElementById('ps-tipo').value;
@@ -1552,7 +1552,7 @@ function calcPsVenc(){
 }
 
 
-savePopupSaida = async() => {
+_savePopupSaida_int = async() => {
   const data = document.getElementById('ps-data').value;
   const raw = document.getElementById('ps-tipo').value;
   const valor = R(parseFloat(document.getElementById('ps-valor').value)||0);
@@ -1586,12 +1586,12 @@ savePopupSaida = async() => {
   }
 
   document.getElementById('btn-ps').disabled = false;
-  clearPopupSaida();
-  closePopup();
+  _clearPopupSaida_int();
+  _closePopup_int();
   toast(meses>1?meses+' meses lançados!':psMod==='avista'?'Saída registrada!':'Saída e conta a pagar registradas!');
 };
 
-savePopupEntrada = async() => {
+_savePopupEntrada_int = async() => {
   const d = document.getElementById('pe-data').value;
   if(!d){toast('Informe a data.',true);return;}
   const campos = ['prazo','cortesia','credito','debito','dinheiro','pix'];
@@ -1601,12 +1601,12 @@ savePopupEntrada = async() => {
   document.getElementById('btn-pe').disabled = true;
   await setDoc(doc(db,'entradas',d), obj);
   document.getElementById('btn-pe').disabled = false;
-  clearPopupEntrada();
-  closePopup();
+  _clearPopupEntrada_int();
+  _closePopup_int();
   toast('Entrada salva!');
 };
 
-clearPopupSaida = () => {
+_clearPopupSaida_int = () => {
   const hj = todayLocal();
   document.getElementById('ps-data').value = hj;
   document.getElementById('ps-tipo').value = '';
@@ -1624,7 +1624,7 @@ clearPopupSaida = () => {
   if(psRec) psRec.style.display = 'none';
 };
 
-clearPopupEntrada = () => {
+_clearPopupEntrada_int = () => {
   const hj = todayLocal();
   document.getElementById('pe-data').value = hj;
   ['pe-prazo','pe-cortesia','pe-credito','pe-debito','pe-dinheiro','pe-pix'].forEach(id=>document.getElementById(id).value='');
@@ -1641,7 +1641,7 @@ clearPopupEntrada = () => {
 });
 
 // ── EXIBIR/OCULTAR SENHA ──────────────────────────────────
-toggleSenha = () => {
+_toggleSenha_int = () => {
   const input = document.getElementById('login-pass');
   const icon = document.getElementById('senha-icon');
   if(input.type === 'password'){
@@ -1656,7 +1656,7 @@ toggleSenha = () => {
 
 
 // ── AUTH ─────────────────────────────────────────────────
-function showView(v){
+function _showView_int(v){
   document.getElementById('view-login').style.display=v==='login'?'block':'none';
   document.getElementById('view-reset').style.display=v==='reset'?'block':'none';
   document.getElementById('login-err').className='login-err';
@@ -1664,7 +1664,7 @@ function showView(v){
   document.getElementById('reset-ok').className='login-ok';
 }
 
-doLogin=async()=>{
+_doLogin_int=async()=>{
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   const err=document.getElementById('login-err');
@@ -1689,7 +1689,7 @@ doLogin=async()=>{
   }
 };
 
-doReset=async()=>{
+_doReset_int=async()=>{
   const email=document.getElementById('reset-email').value.trim();
   const err=document.getElementById('reset-err');
   const ok=document.getElementById('reset-ok');
@@ -1706,7 +1706,7 @@ doReset=async()=>{
   btn.disabled=false;
 };
 
-doLogout=async()=>{
+_doLogout_int=async()=>{
   if(!confirm('Deseja sair do monitor?'))return;
   await signOut(auth);
 };
@@ -1735,48 +1735,48 @@ onAuthStateChanged(auth, user=>{
 
 
 // ── REGISTRO GLOBAL DE FUNÇÕES ──────────────────────────
-window.doLogin_fn = doLogin;
-window.doReset_fn = doReset;
-window.doLogout_fn = doLogout;
-window.toggleSenha_fn = toggleSenha;
-window.showView_fn = showView;
-window.nav_fn = nav;
-window.navMes_fn = navMes;
-window.navHoje_fn = navHoje;
-window.openPopup_fn = openPopup;
-window.closePopup_fn = closePopup;
-window.switchPopupTab_fn = switchPopupTab;
-window.selectPsMod_fn = selectPsMod;
-window.onPsTipoChange_fn = onPsTipoChange;
-window.savePopupSaida_fn = savePopupSaida;
-window.savePopupEntrada_fn = savePopupEntrada;
-window.clearPopupSaida_fn = clearPopupSaida;
-window.clearPopupEntrada_fn = clearPopupEntrada;
-window.selectPsMeses_fn = selectPsMeses;
-window.onTipoChange_fn = onTipoChange;
-window.selectSMod_fn = selectSMod;
-window.saveSaidaUnificada_fn = saveSaidaUnificada;
-window.clearSaidaUnificada_fn = clearSaidaUnificada;
-window.saveEntrada_fn = saveEntrada;
-window.clearEntrada_fn = clearEntrada;
-window.saveMeta_fn = saveMeta;
-window.selectMeses_fn = selectMeses;
-window.onCpTipoChange_fn = onCpTipoChange;
-window.selectCpMeses_fn = selectCpMeses;
-window.saveConta_fn = saveConta;
-window.clearConta_fn = clearConta;
-window.abrirEstender_fn = abrirEstender;
-window.closeModalEstender_fn = closeModalEstender;
-window.selectEstMeses_fn = selectEstMeses;
-window.saveEstender_fn = saveEstender;
-window.openEdit_fn = openEdit;
-window.closeEdit_fn = closeEdit;
-window.saveEdit_fn = saveEdit;
-window.showContasView_fn = showContasView;
-window._pagarConta_fn = _pagarConta;
-window._pagarFatura_fn = _pagarFatura;
-window._delConta_fn = _delConta;
-window._delSaida_fn = _delSaida;
+window.doLogin_fn = _doLogin_int;
+window.doReset_fn = _doReset_int;
+window.doLogout_fn = _doLogout_int;
+window.toggleSenha_fn = _toggleSenha_int;
+window.showView_fn = _showView_int;
+window.nav_fn = _nav_int;
+window.navMes_fn = _navMes_int;
+window.navHoje_fn = _navHoje_int;
+window.openPopup_fn = _openPopup_int;
+window.closePopup_fn = _closePopup_int;
+window.switchPopupTab_fn = _switchPopupTab_int;
+window.selectPsMod_fn = _selectPsMod_int;
+window.onPsTipoChange_fn = _onPsTipoChange_int;
+window.savePopupSaida_fn = _savePopupSaida_int;
+window.savePopupEntrada_fn = _savePopupEntrada_int;
+window.clearPopupSaida_fn = _clearPopupSaida_int;
+window.clearPopupEntrada_fn = _clearPopupEntrada_int;
+window.selectPsMeses_fn = _selectPsMeses_int;
+window.onTipoChange_fn = _onTipoChange_int;
+window.selectSMod_fn = _selectSMod_int;
+window.saveSaidaUnificada_fn = _saveSaidaUnificada_int;
+window.clearSaidaUnificada_fn = _clearSaidaUnificada_int;
+window.saveEntrada_fn = _saveEntrada_int;
+window.clearEntrada_fn = _clearEntrada_int;
+window.saveMeta_fn = _saveMeta_int;
+window.selectMeses_fn = _selectMeses_int;
+window.onCpTipoChange_fn = _onCpTipoChange_int;
+window.selectCpMeses_fn = _selectCpMeses_int;
+window.saveConta_fn = _saveConta_int;
+window.clearConta_fn = _clearConta_int;
+window.abrirEstender_fn = _abrirEstender_int;
+window.closeModalEstender_fn = _closeModalEstender_int;
+window.selectEstMeses_fn = _selectEstMeses_int;
+window.saveEstender_fn = _saveEstender_int;
+window.openEdit_fn = _openEdit_int;
+window.closeEdit_fn = _closeEdit_int;
+window.saveEdit_fn = _saveEdit_int;
+window.showContasView_fn = _showContasView_int;
+window._pagarConta_fn = __pagarConta_int;
+window._pagarFatura_fn = __pagarFatura_int;
+window._delConta_fn = __delConta_int;
+window._delSaida_fn = __delSaida_int;
 function initListeners(){
   let loaded={entradas:false,saidas:false,metas:false,contas:false};
   function checkReady(){
@@ -2338,7 +2338,7 @@ function renderContas(){
 function renderAll(){renderSaude();renderEntradas();renderSaidas();renderMeta();renderContas();}
 
 // ── NAV ──────────────────────────────────────────────────
-nav=(id,btn)=>{
+_nav_int=(id,btn)=>{
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   document.getElementById('pnl-'+id).classList.add('on');
@@ -2346,7 +2346,7 @@ nav=(id,btn)=>{
   renderAll();
 };
 
-showContasView=(view,btn)=>{
+_showContasView_int=(view,btn)=>{
   document.querySelectorAll('.fatura-tabs .ftab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('cv-vencimentos').style.display=view==='vencimentos'?'block':'none';
@@ -2360,9 +2360,9 @@ showContasView=(view,btn)=>{
 // ── FORMULÁRIO UNIFICADO ─────────────────────────────────
 let sModSelecionada='avista';
 
-onTipoChange=()=>{ onTipoChangeRecorrente(); };
+_onTipoChange_int=()=>{ onTipoChangeRecorrente(); };
 
-selectSMod=(mod,btn)=>{
+_selectSMod_int=(mod,btn)=>{
   sModSelecionada=mod;
   document.querySelectorAll('#s-mod-row .mod-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
@@ -2390,7 +2390,7 @@ function calcSVencimento(){
 }
 
 
-saveSaidaUnificada=async()=>{
+_saveSaidaUnificada_int=async()=>{
   const data=document.getElementById('s-data').value;
   const raw=document.getElementById('s-tipo').value;
   const valor=R(parseFloat(document.getElementById('s-valor').value)||0);
@@ -2424,7 +2424,7 @@ saveSaidaUnificada=async()=>{
   }
 
   document.getElementById('btn-saida').disabled=false;
-  clearSaidaUnificada();
+  _clearSaidaUnificada_int();
   toast(meses>1?meses+' meses lançados com sucesso!':sModSelecionada!=='avista'?'Saída e conta a pagar registradas!':'Saída registrada!');
 };
 
@@ -2440,7 +2440,7 @@ function calcVencAuto(data,mod){
   return '';
 }
 
-clearSaidaUnificada=()=>{
+_clearSaidaUnificada_int=()=>{
   const hj=todayLocal();
   document.getElementById('s-data').value=hj;
   document.getElementById('s-tipo').value='';
@@ -2456,7 +2456,7 @@ clearSaidaUnificada=()=>{
 };
 
 // ── AÇÕES ─────────────────────────────────────────────────
-saveEntrada=async()=>{
+_saveEntrada_int=async()=>{
   const d=document.getElementById('e-data').value;
   if(!d){toast('Informe a data.',true);return;}
   const fields=['prazo','cortesia','credito','debito','dinheiro','pix'];
@@ -2466,10 +2466,10 @@ saveEntrada=async()=>{
   document.getElementById('btn-entrada').disabled=true;
   await setDoc(doc(db,'entradas',d),obj);
   document.getElementById('btn-entrada').disabled=false;
-  clearEntrada();toast('Entrada salva!');
+  _clearEntrada_int();toast('Entrada salva!');
 };
 
-saveMeta=async()=>{
+_saveMeta_int=async()=>{
   const d=document.getElementById('m-data').value;
   const v=R(parseFloat(document.getElementById('m-val').value)||0);
   if(!d||v<=0){toast('Informe data e valor.',true);return;}
@@ -2485,21 +2485,21 @@ saveMeta=async()=>{
 // ── NOVA CONTA A PAGAR ───────────────────────────────────
 let cpMesesSel = 6;
 
-onCpTipoChange = () => {
+_onCpTipoChange_int = () => {
   const raw = document.getElementById('cp-tipo').value;
   const grupo = raw ? raw.split('|')[2]||'' : '';
   const wrap = document.getElementById('cp-rec-wrap');
   if(wrap) wrap.style.display = GRUPOS_RECORRENTES.includes(grupo) ? 'block' : 'none';
 };
 
-selectCpMeses = (n, btn) => {
+_selectCpMeses_int = (n, btn) => {
   cpMesesSel = n;
   document.querySelectorAll('#cp-meses-btns .mes-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('cp-meses').value = '';
 };
 
-saveConta = async() => {
+_saveConta_int = async() => {
   const data    = document.getElementById('cp-data').value;
   const raw     = document.getElementById('cp-tipo').value;
   const valor   = R(parseFloat(document.getElementById('cp-valor').value)||0);
@@ -2547,7 +2547,7 @@ saveConta = async() => {
   toast(meses>1 ? meses+' contas a pagar registradas!' : 'Conta a pagar registrada!');
 };
 
-clearConta = () => {
+_clearConta_int = () => {
   const hj = todayLocal();
   document.getElementById('cp-data').value = hj;
   document.getElementById('cp-tipo').value = '';
@@ -2607,7 +2607,7 @@ _delSaida=async(id)=>{
   toast('Saída removida.');
 };
 
-clearEntrada=()=>{
+_clearEntrada_int=()=>{
   const hj=todayLocal();
   document.getElementById('e-data').value=hj;
   ['e-prazo','e-cortesia','e-credito','e-debito','e-dinheiro','e-pix'].forEach(id=>document.getElementById(id).value='');
