@@ -1396,17 +1396,74 @@ function openEdit(tipo, id){
     if(!c) return;
     titulo.textContent = 'Editar conta a pagar';
     const bloqueado = c.status==='pago';
+    // Extrair tipo atual da categoria (formato "grupo|tagcls")
+    const catParts = (c.categoria||'').split('|');
+    const tipoAtual = c.descricao || '';
+
     body.innerHTML = `
       <div class="frow">
-        <div class="fg"><label>Descrição</label><input type="text" id="ed-desc" value="${c.descricao||''}" ${bloqueado?'readonly':''}></div>
-        <div class="fg"><label>Valor (R$)</label><input type="number" id="ed-valor" value="${c.valor||0}" step="0.01" ${bloqueado?'readonly':''}></div>
+        <div class="fg"><label>Tipo de despesa</label>
+          <select id="ed-cp-tipo" ${bloqueado?'disabled':''}>
+            <option value="">Selecione...</option>
+              <optgroup label="Op. Fixas">
+                <option value="Aluguel|op|Despesas Operacionais (Fixas)">Aluguel</option>
+                <option value="Acordos|op|Despesas Operacionais (Fixas)">Acordos</option>
+                <option value="Água|op|Despesas Operacionais (Fixas)">Água</option>
+                <option value="Energia|op|Despesas Operacionais (Fixas)">Energia</option>
+                <option value="Internet (operacional)|op|Despesas Operacionais (Fixas)">Internet (operacional)</option>
+              </optgroup>
+              <optgroup label="Pessoal">
+                <option value="Folha de Pagamento|pess|Despesas com Pessoal">Folha de Pagamento</option>
+                <option value="Encargos|pess|Despesas com Pessoal">Encargos</option>
+                <option value="Benefícios|pess|Despesas com Pessoal">Benefícios</option>
+              </optgroup>
+              <optgroup label="Mercadoria">
+                <option value="Compras de Insumos e Produtos|merc|Custos de Mercadoria (Variáveis)">Compras de Insumos e Produtos</option>
+              </optgroup>
+              <optgroup label="Manutenção">
+                <option value="Manutenção Preventiva/Corretiva|man|Despesas de Manutenção">Manutenção Preventiva/Corretiva</option>
+                <option value="Material de Limpeza e Higiene|man|Despesas de Manutenção">Material de Limpeza e Higiene</option>
+                <option value="Utensílios e Móveis|man|Despesas de Manutenção">Utensílios e Móveis</option>
+              </optgroup>
+              <optgroup label="Vendas e Marketing">
+                <option value="Embalagens|vend|Despesas de Vendas e Marketing">Embalagens</option>
+                <option value="Taxas de Cartão/Aplicativos|vend|Despesas de Vendas e Marketing">Taxas de Cartão/Aplicativos</option>
+                <option value="Marketing/Divulgação|vend|Despesas de Vendas e Marketing">Marketing/Divulgação</option>
+              </optgroup>
+              <optgroup label="Adm. Fixas">
+                <option value="Contabilidade|adm|Despesas Administrativas e Fixas">Contabilidade</option>
+                <option value="Softwares/Sistemas|adm|Despesas Administrativas e Fixas">Softwares/Sistemas</option>
+                <option value="Internet e Telefone|adm|Despesas Administrativas e Fixas">Internet e Telefone</option>
+                <option value="Seguros e Segurança|adm|Despesas Administrativas e Fixas">Seguros e Segurança</option>
+              </optgroup>
+              <optgroup label="Impostos">
+                <option value="DAS/Simples Nacional|imp|Impostos e Encargos">DAS/Simples Nacional</option>
+                <option value="Encargos Sociais|imp|Impostos e Encargos">Encargos Sociais</option>
+                <option value="Tarifas Bancárias|imp|Impostos e Encargos">Tarifas Bancárias</option>
+              </optgroup>
+              <optgroup label="Logística">
+                <option value="Combustível e Manutenção de Veículo|log|Logística">Combustível e Manutenção de Veículo</option>
+              </optgroup>
+          </select>
+        </div>
+        <div class="fg"><label>Descrição / Fornecedor</label><input type="text" id="ed-desc" value="${c.descricao||''}" ${bloqueado?'readonly':''}></div>
       </div>
       <div class="frow">
+        <div class="fg"><label>Valor (R$)</label><input type="number" id="ed-valor" value="${c.valor||0}" step="0.01" ${bloqueado?'readonly':''}></div>
         <div class="fg"><label>Vencimento</label><input type="date" id="ed-venc" value="${c.vencimento||''}" ${bloqueado?'readonly':''}></div>
+      </div>
+      <div class="frow">
         <div class="fg"><label>Observação</label><input type="text" id="ed-obs" value="${c.obs||''}"></div>
       </div>
-      ${bloqueado?'<div style="font-size:11px;color:var(--muted);padding:8px;background:var(--neu-l);border-radius:8px"><i class="ti ti-lock" style="font-size:12px"></i> Conta já paga — apenas observação pode ser alterada.</div>':''}
+      ${bloqueado?'<div style="font-size:11px;color:var(--muted);padding:8px;background:var(--neu-l);border-radius:8px"><i class="ti ti-lock" style="font-size:12px"></i> Conta paga &#8212; apenas observa&#231;&#227;o edit&#225;vel.</div>':''}
     `;
+    // Pré-selecionar o tipo atual no dropdown
+    const sel = document.getElementById('ed-cp-tipo');
+    if(sel){
+      Array.from(sel.options).forEach(opt=>{
+        if(opt.text === tipoAtual || opt.value.startsWith(tipoAtual+'|')) sel.value = opt.value;
+      });
+    }
   }
   overlay.classList.add('show');
 }
@@ -1473,11 +1530,43 @@ saveEdit = async() => {
       const c = ST.contas.find(x=>x.id===id);
       const bloqueado = c && c.status==='pago';
       const upd = {obs: document.getElementById('ed-obs').value.trim()};
+
       if(!bloqueado){
         upd.valor = R(parseFloat(document.getElementById('ed-valor').value)||0);
         upd.vencimento = document.getElementById('ed-venc').value;
         upd.descricao = document.getElementById('ed-desc').value.trim();
+
+        // Tipo de despesa
+        const rawTipo = document.getElementById('ed-cp-tipo').value;
+        if(rawTipo){
+          const[novoTipoNome, novoTagcls, novoGrupo] = rawTipo.split('|');
+          const tipoMudou = c && novoTipoNome !== c.descricao;
+          upd.categoria = novoGrupo+'|'+novoTagcls;
+          upd.descricao = novoTipoNome;
+
+          // Propagação para outros da mesma recorrência
+          if(tipoMudou && c && c.recorrente_id){
+            const demais = ST.contas.filter(x=>x.id!==id && x.recorrente_id===c.recorrente_id && x.status!=='pago');
+            if(demais.length>0){
+              const propagar = confirm(`Existem ${demais.length} outras contas da mesma recorrência. Deseja alterar o tipo em todas elas também?`);
+              if(propagar){
+                for(const d of demais){
+                  await updateDoc(doc(db,'contas',d.id),{
+                    descricao: novoTipoNome,
+                    categoria: novoGrupo+'|'+novoTagcls
+                  });
+                }
+                await updateDoc(doc(db,'contas',id), upd);
+                toast(`Tipo atualizado em ${demais.length+1} contas!`);
+                closeEdit();
+                document.getElementById('btn-edit-save').disabled = false;
+                return;
+              }
+            }
+          }
+        }
       }
+
       await updateDoc(doc(db,'contas',id), upd);
       toast('Conta atualizada!');
     }
