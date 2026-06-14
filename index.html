@@ -383,8 +383,10 @@ select option{font-weight:400;color:#1A1210}
 .cal-pill.pendente{background:#FEF8E7;color:#633806}
 .cal-pill.atrasado{background:#FCEBEB;color:#791F1F}
 .cal-pill.pago{background:#EAF3DE;color:#27500A;opacity:.7}
-.cal-dia-total{font-size:9px;color:var(--muted);font-weight:500;margin-top:2px}
-.cal-dia-total.danger{color:#A32D2D}
+.cal-dia-total{font-size:9px;font-weight:500;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-dia-total.atrasado{color:#A32D2D}
+.cal-dia-total.pendente{color:#633806}
+.cal-dia-total.pago{color:#27500A}
 .cal-legenda{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .cal-leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
 .cal-leg-sq{width:10px;height:10px;border-radius:2px}
@@ -781,6 +783,17 @@ select option{font-weight:400;color:#1A1210}
 
     <!-- PAINEL DE VENCIMENTOS -->
     <div id="view-vencimentos">
+      <!-- CALENDÁRIO — sempre visível -->
+      <div class="cal-container">
+        <div class="cal-legenda">
+          <div class="cal-leg"><div class="cal-leg-sq" style="background:#FEF8E7;border:0.5px solid #E8C87A"></div> Pendente</div>
+          <div class="cal-leg"><div class="cal-leg-sq" style="background:#FCEBEB;border:0.5px solid #F09595"></div> Em atraso</div>
+          <div class="cal-leg"><div class="cal-leg-sq" style="background:#EAF3DE;border:0.5px solid #C0DD97"></div> Pago</div>
+        </div>
+        <div class="cal-grid-wrap" id="cal-contas"></div>
+      </div>
+
+      <!-- ABAS abaixo do calendário -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <div class="fatura-tabs">
           <button class="ftab on" onclick="showContasView('vencimentos',this)"><i class="ti ti-list"></i> Vencimentos</button>
@@ -790,16 +803,6 @@ select option{font-weight:400;color:#1A1210}
       </div>
 
       <div id="cv-vencimentos">
-        <!-- CALENDÁRIO -->
-        <div class="cal-container">
-          <div class="cal-legenda">
-            <div class="cal-leg"><div class="cal-leg-sq" style="background:#FEF8E7;border:0.5px solid #E8C87A"></div> Pendente</div>
-            <div class="cal-leg"><div class="cal-leg-sq" style="background:#FCEBEB;border:0.5px solid #F09595"></div> Em atraso</div>
-            <div class="cal-leg"><div class="cal-leg-sq" style="background:#EAF3DE;border:0.5px solid #C0DD97"></div> Pago</div>
-          </div>
-          <div class="cal-grid-wrap" id="cal-contas"></div>
-        </div>
-        <!-- LISTA -->
         <div class="cp-group" id="cp-atrasadas"></div>
         <div class="cp-group" id="cp-semana"></div>
         <div class="cp-group" id="cp-mes"></div>
@@ -2345,25 +2348,25 @@ function renderCalendarioContas(contas){
     const cs = porDia[dataStr] || [];
     const isHoje = dataStr === td;
     const temContas = cs.length > 0;
-    const totalDia = R(cs.filter(c=>c.status!=='pago').reduce((a,c)=>a+R(c.valor||0),0));
+
+    // Calcular totais por status
+    const totPendente = R(cs.filter(c=>c.status!=='pago'&&c.vencimento>=td).reduce((a,c)=>a+R(c.valor||0),0));
+    const totAtrasado = R(cs.filter(c=>c.status!=='pago'&&c.vencimento<td).reduce((a,c)=>a+R(c.valor||0),0));
+    const totPago = R(cs.filter(c=>c.status==='pago').reduce((a,c)=>a+R(c.valor||0),0));
 
     let cls = 'cal-cell';
     if(isHoje) cls += ' hoje';
     if(temContas) cls += ' tem-contas';
 
-    let pills = '';
-    cs.slice(0,2).forEach(c=>{
-      const st = c.status==='pago'?'pago': c.vencimento<td?'atrasado':'pendente';
-      pills += `<span class="cal-pill ${st}">${c.descricao||c.tipo||'Conta'}</span>`;
-    });
-    if(cs.length>2) pills += `<span class="cal-pill pendente">+${cs.length-2}</span>`;
-
-    const totalHtml = totalDia>0 ? `<div class="cal-dia-total danger">${brl(totalDia)}</div>` : '';
+    // Mostrar totais por status no dia
+    let totais = '';
+    if(totAtrasado>0) totais += `<div class="cal-dia-total atrasado">Em atraso: ${brl(totAtrasado)}</div>`;
+    if(totPendente>0) totais += `<div class="cal-dia-total pendente">Pend: ${brl(totPendente)}</div>`;
+    if(totPago>0) totais += `<div class="cal-dia-total pago">Pago: ${brl(totPago)}</div>`;
 
     html += `<div class="${cls}" onclick="scrollToDay('${dataStr}')">
       <div class="cal-num">${d}</div>
-      ${pills}
-      ${totalHtml}
+      ${totais}
     </div>`;
   }
 
