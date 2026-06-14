@@ -1072,24 +1072,28 @@ function destroyChart(id){
   }
 }
 function mkChart(id,cfg){
-  destroyChart(id);
-  const wrapper = document.getElementById('wrap-'+id);
+  // Passo 1: destruir chart via referência interna
+  if(charts[id]){ try{charts[id].destroy();}catch(e){} delete charts[id]; }
+  // Passo 2: destruir via Chart.getChart no elemento atual (antes de mexer no DOM)
+  var elAtual = document.getElementById(id);
+  if(elAtual){ var cAtual = Chart.getChart(elAtual); if(cAtual) try{cAtual.destroy();}catch(e){} }
+
+  var wrapper = document.getElementById('wrap-'+id);
   if(!wrapper) return;
 
-  // Verificar se há valores reais
-  const labels = cfg.data && cfg.data.labels ? cfg.data.labels : [];
-  const valores = cfg.data && cfg.data.datasets ? cfg.data.datasets.flatMap(function(ds){return ds.data||[];}) : [];
-  const temDados = labels.length > 0 && valores.some(function(v){return (v||0)>0;});
+  // Passo 3: verificar se há valores reais
+  var labels = cfg.data && cfg.data.labels ? cfg.data.labels : [];
+  var valores = cfg.data && cfg.data.datasets ? cfg.data.datasets.flatMap(function(ds){return ds.data||[];}) : [];
+  var temDados = labels.length > 0 && valores.some(function(v){return (v||0)>0;});
 
+  // Passo 4: substituir DOM APÓS destruir o chart
   if(!temDados){
-    // Limpar wrapper com mensagem — funciona mesmo com aba oculta
     wrapper.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;font-size:13px;color:#9E7A56;font-family:Inter,sans-serif">Sem dados para o período selecionado</div>';
     return;
   }
 
-  // Limpar e criar novo canvas
   wrapper.innerHTML = '<canvas id="'+id+'" style="display:block;width:100%;height:200px"></canvas>';
-  const novo = document.getElementById(id);
+  var novo = document.getElementById(id);
   if(!novo) return;
   charts[id] = new Chart(novo, cfg);
 }
