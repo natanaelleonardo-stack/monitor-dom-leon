@@ -368,6 +368,26 @@ select option{font-weight:400;color:#1A1210}
 .mes-nav-hoje{padding:5px 12px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--br);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
 .mes-nav-hoje:hover{background:var(--br-xl);border-color:var(--br-l)}
 .mes-nav-hoje.ativo{background:var(--br-d);color:#fff;border-color:var(--br-d);cursor:default}
+
+.cal-container{margin-bottom:24px}
+.cal-grid-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:16px}
+.cal-dow{text-align:center;font-size:10px;font-weight:500;color:var(--muted);padding:4px 0;text-transform:uppercase}
+.cal-cell{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;min-height:64px;padding:5px;cursor:default;position:relative}
+.cal-cell.vazio{background:var(--bg);border-color:transparent}
+.cal-cell.hoje{border:1.5px solid var(--br);border-radius:6px}
+.cal-cell.tem-contas{cursor:pointer}
+.cal-cell.tem-contas:hover{border-color:var(--br-l);background:var(--br-xl)}
+.cal-num{font-size:11px;font-weight:500;color:var(--muted);margin-bottom:3px}
+.cal-cell.hoje .cal-num{color:var(--br-d);font-weight:600}
+.cal-pill{font-size:9px;font-weight:500;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
+.cal-pill.pendente{background:#FEF8E7;color:#633806}
+.cal-pill.atrasado{background:#FCEBEB;color:#791F1F}
+.cal-pill.pago{background:#EAF3DE;color:#27500A;opacity:.7}
+.cal-dia-total{font-size:9px;color:var(--muted);font-weight:500;margin-top:2px}
+.cal-dia-total.danger{color:#A32D2D}
+.cal-legenda{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.cal-leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.cal-leg-sq{width:10px;height:10px;border-radius:2px}
 </style>
 </head>
 <body>
@@ -770,6 +790,16 @@ select option{font-weight:400;color:#1A1210}
       </div>
 
       <div id="cv-vencimentos">
+        <!-- CALENDÁRIO -->
+        <div class="cal-container">
+          <div class="cal-legenda">
+            <div class="cal-leg"><div class="cal-leg-sq" style="background:#FEF8E7;border:0.5px solid #E8C87A"></div> Pendente</div>
+            <div class="cal-leg"><div class="cal-leg-sq" style="background:#FCEBEB;border:0.5px solid #F09595"></div> Em atraso</div>
+            <div class="cal-leg"><div class="cal-leg-sq" style="background:#EAF3DE;border:0.5px solid #C0DD97"></div> Pago</div>
+          </div>
+          <div class="cal-grid-wrap" id="cal-contas"></div>
+        </div>
+        <!-- LISTA -->
         <div class="cp-group" id="cp-atrasadas"></div>
         <div class="cp-group" id="cp-semana"></div>
         <div class="cp-group" id="cp-mes"></div>
@@ -1384,12 +1414,40 @@ saveEdit = async() => {
 
   try{
     if(tipo==='saida'){
-      await updateDoc(doc(db,'saidas',id),{
+      const s = ST.saidas.find(x=>x.id===id);
+      const novoTipo = document.getElementById('ed-tipo').value;
+      const tipoMudou = s && novoTipo !== s.tipo;
+
+      const upd = {
         data: document.getElementById('ed-data').value,
-        tipo: document.getElementById('ed-tipo').value,
+        tipo: novoTipo,
         valor: R(parseFloat(document.getElementById('ed-valor').value)||0),
         descricao: document.getElementById('ed-desc').value.trim()
-      });
+      };
+
+      // Se o tipo mudou e há outros registros com mesmo tipo original
+      if(tipoMudou && s && s.recorrente_id){
+        const demais = ST.saidas.filter(x=>x.id!==id && x.recorrente_id===s.recorrente_id);
+        if(demais.length>0){
+          const propagar = confirm(`Existem ${demais.length} outros lançamentos da mesma recorrência com o tipo "${s.tipo}". Deseja alterar o tipo em todos eles também?`);
+          if(propagar){
+            for(const d of demais){
+              await updateDoc(doc(db,'saidas',d.id),{tipo:novoTipo});
+            }
+            toast(`Tipo atualizado em ${demais.length+1} lançamentos!`);
+          } else {
+            await updateDoc(doc(db,'saidas',id), upd);
+            toast('Lançamento atualizado!');
+          }
+        } else {
+          await updateDoc(doc(db,'saidas',id), upd);
+          toast('Lançamento atualizado!');
+        }
+      } else {
+        await updateDoc(doc(db,'saidas',id), upd);
+        toast('Lançamento atualizado!');
+      }
+
     } else if(tipo==='entrada'){
       await setDoc(doc(db,'entradas',id),{
         data: id,
@@ -1400,6 +1458,7 @@ saveEdit = async() => {
         dinheiro: R(parseFloat(document.getElementById('ed-dinheiro').value)||0),
         pix: R(parseFloat(document.getElementById('ed-pix').value)||0),
       });
+      toast('Lançamento atualizado!');
     } else if(tipo==='conta'){
       const c = ST.contas.find(x=>x.id===id);
       const bloqueado = c && c.status==='pago';
@@ -1410,9 +1469,9 @@ saveEdit = async() => {
         upd.descricao = document.getElementById('ed-desc').value.trim();
       }
       await updateDoc(doc(db,'contas',id), upd);
+      toast('Conta atualizada!');
     }
     closeEdit();
-    toast('Lançamento atualizado!');
   } catch(e){
     toast('Erro ao salvar: '+e.message, true);
   }
@@ -2254,6 +2313,69 @@ function renderMeta(){
 }
 
 // ── RENDER CONTAS A PAGAR ────────────────────────────────
+
+// ── CALENDÁRIO CONTAS A PAGAR ────────────────────────────
+function renderCalendarioContas(contas){
+  const cal = document.getElementById('cal-contas');
+  if(!cal) return;
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+  const primeiroDia = new Date(parseInt(ay), parseInt(am)-1, 1).getDay();
+  const td = todayLocal();
+
+  // Agrupar contas por dia de vencimento
+  const porDia = {};
+  contas.forEach(c=>{
+    if(!c.vencimento || !c.vencimento.startsWith(mesFiltro)) return;
+    const d = c.vencimento;
+    if(!porDia[d]) porDia[d] = [];
+    porDia[d].push(c);
+  });
+
+  // Cabeçalho dias da semana
+  const dows = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let html = dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  // Células vazias antes do dia 1
+  for(let i=0;i<primeiroDia;i++) html += '<div class="cal-cell vazio"></div>';
+
+  // Dias do mês
+  for(let d=1;d<=diasNoMes;d++){
+    const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
+    const cs = porDia[dataStr] || [];
+    const isHoje = dataStr === td;
+    const temContas = cs.length > 0;
+    const totalDia = R(cs.filter(c=>c.status!=='pago').reduce((a,c)=>a+R(c.valor||0),0));
+
+    let cls = 'cal-cell';
+    if(isHoje) cls += ' hoje';
+    if(temContas) cls += ' tem-contas';
+
+    let pills = '';
+    cs.slice(0,2).forEach(c=>{
+      const st = c.status==='pago'?'pago': c.vencimento<td?'atrasado':'pendente';
+      pills += `<span class="cal-pill ${st}">${c.descricao||c.tipo||'Conta'}</span>`;
+    });
+    if(cs.length>2) pills += `<span class="cal-pill pendente">+${cs.length-2}</span>`;
+
+    const totalHtml = totalDia>0 ? `<div class="cal-dia-total danger">${brl(totalDia)}</div>` : '';
+
+    html += `<div class="${cls}" onclick="scrollToDay('${dataStr}')">
+      <div class="cal-num">${d}</div>
+      ${pills}
+      ${totalHtml}
+    </div>`;
+  }
+
+  cal.innerHTML = html;
+}
+
+function scrollToDay(data){
+  // Rolar para o item da lista com aquele vencimento
+  const items = document.querySelectorAll('[data-venc="'+data+'"]');
+  if(items.length) items[0].scrollIntoView({behavior:'smooth', block:'center'});
+}
+
 function renderContas(){
   const td=today();
   // Filtrar pelo mês selecionado — incluindo cartões pelo vencimento
@@ -2275,6 +2397,7 @@ function renderContas(){
   const totalMes=R(pendentes.reduce((a,b)=>a+R(b.valor),0)); // inclui cartões
   const totalPago=R(pagas.reduce((a,b)=>a+R(b.valor),0));
 
+  renderCalendarioContas(contas);
   document.getElementById('kpi-contas').innerHTML=`
     <div class="kpi err"><div class="kpi-label">Em atraso</div><div class="kpi-val err">${brl(totalAtraso)}</div><div class="kpi-sub"><span class="pill err">${atrasadas.length} conta${atrasadas.length!==1?'s':''}</span></div></div>
     <div class="kpi warn"><div class="kpi-label">Vence essa semana</div><div class="kpi-val warn" style="font-size:20px">${brl(totalSemana)}</div><div class="kpi-sub"><span class="pill warn">${semana.length} conta${semana.length!==1?'s':''}</span></div></div>
