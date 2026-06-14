@@ -1536,13 +1536,14 @@ saveEdit = async() => {
         upd.vencimento = document.getElementById('ed-venc').value;
         upd.descricao = document.getElementById('ed-desc').value.trim();
 
-        // Tipo de despesa
+        // Tipo de despesa — NÃO sobrescreve descricao (título/fornecedor)
         const rawTipo = document.getElementById('ed-cp-tipo').value;
         if(rawTipo){
           const[novoTipoNome, novoTagcls, novoGrupo] = rawTipo.split('|');
-          const tipoMudou = c && novoTipoNome !== c.descricao;
+          const tipoAtualConta = (c.categoria||'').split('|')[1]||'';
+          const tipoMudou = novoTagcls !== tipoAtualConta;
+          // Atualizar apenas categoria — preservar descricao (fornecedor/título)
           upd.categoria = novoGrupo+'|'+novoTagcls;
-          upd.descricao = novoTipoNome;
 
           // Propagação para outros da mesma recorrência
           if(tipoMudou && c && c.recorrente_id){
@@ -1552,7 +1553,6 @@ saveEdit = async() => {
               if(propagar){
                 for(const d of demais){
                   await updateDoc(doc(db,'contas',d.id),{
-                    descricao: novoTipoNome,
                     categoria: novoGrupo+'|'+novoTagcls
                   });
                 }
