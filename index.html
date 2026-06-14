@@ -1124,12 +1124,22 @@ function totalE(d){const e=ST.entradas.find(x=>x.data===d);if(!e)return 0;return
 function totalS(d){return R(ST.saidas.filter(x=>x.data===d).reduce((a,b)=>a+R(b.valor||0),0));}
 function getMeta(d){const m=ST.metas.find(x=>x.data===d);return m?R(m.valor):METAS_MAIO[d]||0;}
 function dotR(v){if(v>0)return'<span class="dot ok"></span> Positivo';if(v<0)return'<span class="dot err"></span> Negativo';return'<span class="dot neu"></span> Zerado';}
-function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function destroyChart(id){
+  if(charts[id]){
+    try{ charts[id].destroy(); }catch(e){}
+    delete charts[id];
+  }
+  // Garantir que o Chart.js não mantém referência interna ao canvas
+  const el = document.getElementById(id);
+  if(el){
+    const existing = Chart.getChart(el);
+    if(existing) try{ existing.destroy(); }catch(e){}
+  }
+}
 function mkChart(id,cfg){
   destroyChart(id);
   const wrapper = document.getElementById('wrap-'+id);
   if(!wrapper) return;
-  const h = wrapper.offsetHeight || 200;
 
   // Verificar se há valores reais
   const labels = cfg.data && cfg.data.labels ? cfg.data.labels : [];
@@ -1137,13 +1147,15 @@ function mkChart(id,cfg){
   const temDados = labels.length > 0 && valores.some(function(v){return (v||0)>0;});
 
   if(!temDados){
-    wrapper.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:'+h+'px;font-size:13px;color:#9E7A56;font-family:Inter,sans-serif">Sem dados para o período selecionado</div>';
+    // Limpar wrapper com mensagem — funciona mesmo com aba oculta
+    wrapper.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;font-size:13px;color:#9E7A56;font-family:Inter,sans-serif">Sem dados para o período selecionado</div>';
     return;
   }
 
-  // Limpar wrapper e criar canvas novo
-  wrapper.innerHTML = '<canvas id="'+id+'" style="display:block;width:100%;height:100%"></canvas>';
+  // Limpar e criar novo canvas
+  wrapper.innerHTML = '<canvas id="'+id+'" style="display:block;width:100%;height:200px"></canvas>';
   const novo = document.getElementById(id);
+  if(!novo) return;
   charts[id] = new Chart(novo, cfg);
 }
 function todayLocal(){
