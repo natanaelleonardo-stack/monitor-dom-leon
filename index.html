@@ -1016,7 +1016,13 @@ function safeOn(id, evt, fn){
 }
 // ── PROXIES GLOBAIS COMPLETOS ─────────────────────────────
 // Autenticação
-function doLogin(){ if(window.doLogin_fn) window.doLogin_fn(); }
+function doLogin(){
+  if(window.doLogin_fn) window.doLogin_fn();
+  else { // script ainda não carregou — mostrar erro
+    const err=document.getElementById('login-err');
+    if(err){err.textContent='Carregando... tente novamente em 2 segundos.';err.className='login-err show';}
+  }
+}
 function doReset(){ if(window.doReset_fn) window.doReset_fn(); }
 function doLogout(){ if(window.doLogout_fn) window.doLogout_fn(); }
 function toggleSenha(){ if(window.toggleSenha_fn) window.toggleSenha_fn(); }
@@ -1066,6 +1072,7 @@ function _pagarFatura(c,m){ if(window._pagarFatura_fn) window._pagarFatura_fn(c,
 function _delConta(id){ if(window._delConta_fn) window._delConta_fn(id); }
 function _delSaida(id){ if(window._delSaida_fn) window._delSaida_fn(id); }
 </script>
+<script>
 const { initializeApp } = firebaseApp;
 const { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } = firebaseFirestore;
 const { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } = firebaseAuth;
