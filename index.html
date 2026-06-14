@@ -1014,16 +1014,58 @@ function safeOn(id, evt, fn){
   const el = document.getElementById(id);
   if(el) el.addEventListener(evt, fn);
 }
-// Proxies para nova conta a pagar
+// ── PROXIES GLOBAIS COMPLETOS ─────────────────────────────
+// Autenticação
+function doLogin(){ if(window.doLogin_fn) window.doLogin_fn(); }
+function doReset(){ if(window.doReset_fn) window.doReset_fn(); }
+function doLogout(){ if(window.doLogout_fn) window.doLogout_fn(); }
+function toggleSenha(){ if(window.toggleSenha_fn) window.toggleSenha_fn(); }
+function showView(v){ if(window.showView_fn) window.showView_fn(v); }
+// Navegação
+function nav(id,btn){ if(window.nav_fn) window.nav_fn(id,btn); }
+function navMes(d){ if(window.navMes_fn) window.navMes_fn(d); }
+function navHoje(){ if(window.navHoje_fn) window.navHoje_fn(); }
+// Popup lançamento rápido
+function openPopup(){ if(window.openPopup_fn) window.openPopup_fn(); }
+function closePopup(){ if(window.closePopup_fn) window.closePopup_fn(); }
+function switchPopupTab(t){ if(window.switchPopupTab_fn) window.switchPopupTab_fn(t); }
+function selectPsMod(m,b){ if(window.selectPsMod_fn) window.selectPsMod_fn(m,b); }
+function onPsTipoChange(){ if(window.onPsTipoChange_fn) window.onPsTipoChange_fn(); }
+function savePopupSaida(){ if(window.savePopupSaida_fn) window.savePopupSaida_fn(); }
+function savePopupEntrada(){ if(window.savePopupEntrada_fn) window.savePopupEntrada_fn(); }
+function clearPopupSaida(){ if(window.clearPopupSaida_fn) window.clearPopupSaida_fn(); }
+function clearPopupEntrada(){ if(window.clearPopupEntrada_fn) window.clearPopupEntrada_fn(); }
+function selectPsMeses(n,b){ if(window.selectPsMeses_fn) window.selectPsMeses_fn(n,b); }
+// Formulários lançar
+function onTipoChange(){ if(window.onTipoChange_fn) window.onTipoChange_fn(); }
+function selectSMod(m,b){ if(window.selectSMod_fn) window.selectSMod_fn(m,b); }
+function saveSaidaUnificada(){ if(window.saveSaidaUnificada_fn) window.saveSaidaUnificada_fn(); }
+function clearSaidaUnificada(){ if(window.clearSaidaUnificada_fn) window.clearSaidaUnificada_fn(); }
+function saveEntrada(){ if(window.saveEntrada_fn) window.saveEntrada_fn(); }
+function clearEntrada(){ if(window.clearEntrada_fn) window.clearEntrada_fn(); }
+function saveMeta(){ if(window.saveMeta_fn) window.saveMeta_fn(); }
+function selectMeses(n,b){ if(window.selectMeses_fn) window.selectMeses_fn(n,b); }
+// Conta a pagar
 function onCpTipoChange(){ if(window.onCpTipoChange_fn) window.onCpTipoChange_fn(); }
 function selectCpMeses(n,b){ if(window.selectCpMeses_fn) window.selectCpMeses_fn(n,b); }
 function saveConta(){ if(window.saveConta_fn) window.saveConta_fn(); }
 function clearConta(){ if(window.clearConta_fn) window.clearConta_fn(); }
-function navHoje(){ if(window.navHoje_fn) window.navHoje_fn(); }
+// Modal estender recorrente
+function abrirEstender(id){ if(window.abrirEstender_fn) window.abrirEstender_fn(id); }
+function closeModalEstender(){ if(window.closeModalEstender_fn) window.closeModalEstender_fn(); }
+function selectEstMeses(n,b){ if(window.selectEstMeses_fn) window.selectEstMeses_fn(n,b); }
+function saveEstender(){ if(window.saveEstender_fn) window.saveEstender_fn(); }
+// Edição
+function openEdit(t,id){ if(window.openEdit_fn) window.openEdit_fn(t,id); }
 function closeEdit(){ if(window.closeEdit_fn) window.closeEdit_fn(); }
 function saveEdit(){ if(window.saveEdit_fn) window.saveEdit_fn(); }
-function openEdit(t,id){ if(window.openEdit_fn) window.openEdit_fn(t,id); }
-
+// Contas a pagar
+function showContasView(v,b){ if(window.showContasView_fn) window.showContasView_fn(v,b); }
+function _pagarConta(id){ if(window._pagarConta_fn) window._pagarConta_fn(id); }
+function _pagarFatura(c,m){ if(window._pagarFatura_fn) window._pagarFatura_fn(c,m); }
+function _delConta(id){ if(window._delConta_fn) window._delConta_fn(id); }
+function _delSaida(id){ if(window._delSaida_fn) window._delSaida_fn(id); }
+</script>
 const { initializeApp } = firebaseApp;
 const { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot } = firebaseFirestore;
 const { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } = firebaseAuth;
@@ -1089,10 +1131,12 @@ function mkChart(id,cfg){
   novo.id = id;
   container.appendChild(novo);
 
-  // Sem dados: mostrar mensagem no canvas limpo
-  const temDados = cfg.data && cfg.data.labels && cfg.data.labels.length > 0;
+  // Verificar se há labels E pelo menos 1 valor real (> 0)
+  const labels = cfg.data?.labels || [];
+  const valores = (cfg.data?.datasets || []).flatMap(ds=>ds.data||[]);
+  const temDados = labels.length > 0 && valores.some(v=>v > 0);
+
   if(!temDados){
-    // Aguardar o canvas ter dimensões reais
     requestAnimationFrame(()=>{
       const ctx = novo.getContext('2d');
       novo.width = container.offsetWidth || 400;
@@ -1692,6 +1736,50 @@ onAuthStateChanged(auth, user=>{
   }
 });
 
+
+// ── REGISTRO GLOBAL DE FUNÇÕES ──────────────────────────
+window.doLogin_fn = doLogin;
+window.doReset_fn = doReset;
+window.doLogout_fn = doLogout;
+window.toggleSenha_fn = toggleSenha;
+window.showView_fn = showView;
+window.nav_fn = nav;
+window.navMes_fn = navMes;
+window.navHoje_fn = navHoje;
+window.openPopup_fn = openPopup;
+window.closePopup_fn = closePopup;
+window.switchPopupTab_fn = switchPopupTab;
+window.selectPsMod_fn = selectPsMod;
+window.onPsTipoChange_fn = onPsTipoChange;
+window.savePopupSaida_fn = savePopupSaida;
+window.savePopupEntrada_fn = savePopupEntrada;
+window.clearPopupSaida_fn = clearPopupSaida;
+window.clearPopupEntrada_fn = clearPopupEntrada;
+window.selectPsMeses_fn = selectPsMeses;
+window.onTipoChange_fn = onTipoChange;
+window.selectSMod_fn = selectSMod;
+window.saveSaidaUnificada_fn = saveSaidaUnificada;
+window.clearSaidaUnificada_fn = clearSaidaUnificada;
+window.saveEntrada_fn = saveEntrada;
+window.clearEntrada_fn = clearEntrada;
+window.saveMeta_fn = saveMeta;
+window.selectMeses_fn = selectMeses;
+window.onCpTipoChange_fn = onCpTipoChange;
+window.selectCpMeses_fn = selectCpMeses;
+window.saveConta_fn = saveConta;
+window.clearConta_fn = clearConta;
+window.abrirEstender_fn = abrirEstender;
+window.closeModalEstender_fn = closeModalEstender;
+window.selectEstMeses_fn = selectEstMeses;
+window.saveEstender_fn = saveEstender;
+window.openEdit_fn = openEdit;
+window.closeEdit_fn = closeEdit;
+window.saveEdit_fn = saveEdit;
+window.showContasView_fn = showContasView;
+window._pagarConta_fn = _pagarConta;
+window._pagarFatura_fn = _pagarFatura;
+window._delConta_fn = _delConta;
+window._delSaida_fn = _delSaida;
 function initListeners(){
   let loaded={entradas:false,saidas:false,metas:false,contas:false};
   function checkReady(){
