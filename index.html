@@ -1372,7 +1372,7 @@ _saveEstender_int = async() => {
 // ── EDIÇÃO DE LANÇAMENTOS ────────────────────────────────
 let editCtx = null; // {tipo:'saida'|'entrada'|'conta', id, data}
 
-function openEdit(tipo, id){
+function _openEdit_int(tipo, id){
   editCtx = {tipo, id};
   const overlay = document.getElementById('edit-overlay');
   const body = document.getElementById('edit-body');
