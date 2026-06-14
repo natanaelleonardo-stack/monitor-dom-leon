@@ -1734,74 +1734,8 @@ onAuthStateChanged(auth, user=>{
 });
 
 
-// ── REGISTRO GLOBAL DE FUNÇÕES ──────────────────────────
-window.doLogin_fn = _doLogin_int;
-window.doReset_fn = _doReset_int;
-window.doLogout_fn = _doLogout_int;
-window.toggleSenha_fn = _toggleSenha_int;
-window.showView_fn = _showView_int;
-window.nav_fn = _nav_int;
-window.navMes_fn = _navMes_int;
-window.navHoje_fn = _navHoje_int;
-window.openPopup_fn = _openPopup_int;
-window.closePopup_fn = _closePopup_int;
-window.switchPopupTab_fn = _switchPopupTab_int;
-window.selectPsMod_fn = _selectPsMod_int;
-window.onPsTipoChange_fn = _onPsTipoChange_int;
-window.savePopupSaida_fn = _savePopupSaida_int;
-window.savePopupEntrada_fn = _savePopupEntrada_int;
-window.clearPopupSaida_fn = _clearPopupSaida_int;
-window.clearPopupEntrada_fn = _clearPopupEntrada_int;
-window.selectPsMeses_fn = _selectPsMeses_int;
-window.onTipoChange_fn = _onTipoChange_int;
-window.selectSMod_fn = _selectSMod_int;
-window.saveSaidaUnificada_fn = _saveSaidaUnificada_int;
-window.clearSaidaUnificada_fn = _clearSaidaUnificada_int;
-window.saveEntrada_fn = _saveEntrada_int;
-window.clearEntrada_fn = _clearEntrada_int;
-window.saveMeta_fn = _saveMeta_int;
-window.selectMeses_fn = _selectMeses_int;
-window.onCpTipoChange_fn = _onCpTipoChange_int;
-window.selectCpMeses_fn = _selectCpMeses_int;
-window.saveConta_fn = _saveConta_int;
-window.clearConta_fn = _clearConta_int;
-window.abrirEstender_fn = _abrirEstender_int;
-window.closeModalEstender_fn = _closeModalEstender_int;
-window.selectEstMeses_fn = _selectEstMeses_int;
-window.saveEstender_fn = _saveEstender_int;
-window.openEdit_fn = _openEdit_int;
-window.closeEdit_fn = _closeEdit_int;
-window.saveEdit_fn = _saveEdit_int;
-window.showContasView_fn = _showContasView_int;
-window._pagarConta_fn = __pagarConta_int;
-window._pagarFatura_fn = __pagarFatura_int;
-window._delConta_fn = __delConta_int;
-window._delSaida_fn = __delSaida_int;
-function initListeners(){
-  let loaded={entradas:false,saidas:false,metas:false,contas:false};
-  function checkReady(){
-    if(loaded.entradas&&loaded.saidas&&loaded.metas&&loaded.contas){
-      document.getElementById('loading').classList.remove('show');
-      setSyncStatus('ok');dbReady=true;renderAll();seedMetas();
-    }
-  }
-  onSnapshot(collection(db,'entradas'),snap=>{ST.entradas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.entradas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('entradas:',err.message);});
-  onSnapshot(collection(db,'saidas'),snap=>{ST.saidas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.saidas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('saidas:',err.message);});
-  onSnapshot(collection(db,'metas'),snap=>{ST.metas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.metas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('metas:',err.message);});
-  onSnapshot(collection(db,'contas'),snap=>{ST.contas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.contas=true;checkReady();if(dbReady)renderContas();},(err)=>{setSyncStatus('err');console.error('contas:',err.message);});
-}
 
-async function seedMetas(){
-  for(const[d,v]of Object.entries(METAS_MAIO)){
-    if(!ST.metas.find(m=>m.data===d))await setDoc(doc(db,'metas',d),{data:d,valor:v});
-  }
-}
 
-// ── RENDER SAÚDE ────────────────────────────────────────
-
-// ═══════════════════════════════════════════════════════════
-// ITEM 18: PROJEÇÃO SAZONAL + TERMÔMETRO + SEMÁFORO
-// ═══════════════════════════════════════════════════════════
 // ── FERIADOS 2026-2029 ───────────────────────────────────
 const FERIADOS = new Set([
   // 2026 — Nacionais fixos
@@ -1856,6 +1790,161 @@ function catSazonal(data){
   const amanha = addDays(data,1);
   if(isFeriado(amanha)) return 8;
   return dweek(data);
+}
+
+function calcProjecao(){
+  const hoje = today();
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+
+  // Alerta feriados expirados (exibir no card se mês > dez/2029)
+  const feriadosExpirados = parseInt(ay) > ULTIMO_ANO_FERIADOS;
+
+  // 1. Índices sazonais por categoria (0-6 = dia semana, 7 = feriado, 8 = véspera)
+  // Usar IQR para excluir outliers em cada categoria
+  const indices = [0,1,2,3,4,5,6,7,8].map(cat=>{
+    const vals = ST.entradas
+      .filter(e=>{
+        if(e.data.startsWith(mesFiltro)) return false;
+        return catSazonal(e.data) === cat;
+      })
+      .map(e=>R((e.prazo||0)+(e.cortesia||0)+(e.credito||0)+(e.debito||0)+(e.dinheiro||0)+(e.pix||0)));
+
+    if(!vals.length) return cat===7 ? (indices_dw_fallback(cat)) : 0;
+
+    const sorted = [...vals].sort((a,b)=>a-b);
+    const q1 = sorted[Math.floor(sorted.length*0.25)];
+    const q3 = sorted[Math.floor(sorted.length*0.75)];
+    const iqr = q3-q1;
+    const fence = iqr*1.5;
+    const filtered = sorted.filter(v=>v>=q1-fence && v<=q3+fence);
+    return filtered.length ? R(filtered.reduce((a,b)=>a+b,0)/filtered.length) : R(vals.reduce((a,b)=>a+b,0)/vals.length);
+  });
+
+  // Fallback: se não há histórico de feriados, usar 60% do índice do mesmo dia da semana
+  function indiceParaData(data){
+    const cat = catSazonal(data);
+    if(indices[cat]>0) return indices[cat];
+    if(cat===7||cat===8) return R((indices[dweek(data)]||0)*0.6);
+    return indices[cat]||0;
+  }
+
+  // 2. Dias lançados no mês atual (excluindo feriados do cálculo do fator)
+  const diasLancados = ST.entradas.filter(e=>e.data.startsWith(mesFiltro)).sort((a,b)=>a.data.localeCompare(b.data));
+  const realizadoTotal = R(diasLancados.reduce((a,e)=>a+totalE(e.data),0));
+
+  // 3. Fator do mês atual — usando índice correto por categoria
+  let somaIndicesLancados = 0;
+  diasLancados.forEach(e=>{
+    somaIndicesLancados += indiceParaData(e.data)||0;
+  });
+  const fator = somaIndicesLancados>0 ? realizadoTotal/somaIndicesLancados : 1;
+
+  // 4. Projetar dias restantes com categoria correta
+  let projecaoRestante = 0;
+  for(let d=1;d<=diasNoMes;d++){
+    const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
+    if(!ST.entradas.find(e=>e.data===dataStr)){
+      projecaoRestante += indiceParaData(dataStr) * fator;
+    }
+  }
+  const projecaoTotal = R(realizadoTotal + projecaoRestante);
+
+  // 5. Score de confiabilidade — CORRIGIDO
+  let score = 0;
+  const nDias = diasLancados.length;
+  const pctMes = nDias / diasNoMes;
+
+  // Critério principal: % do mês lançado (mais justo que número absoluto)
+  if(pctMes>=0.85) score+=35;
+  else if(pctMes>=0.65) score+=28;
+  else if(pctMes>=0.45) score+=20;
+  else if(pctMes>=0.25) score+=12;
+  else score+=5;
+
+  // Sábados e domingos lançados
+  const temSab = diasLancados.some(e=>dweek(e.data)===6);
+  const temDom = diasLancados.some(e=>dweek(e.data)===0);
+  if(temSab && temDom) score+=20; else if(temSab||temDom) score+=10;
+
+  // Histórico disponível
+  const mesesHistorico = [...new Set(ST.entradas.map(e=>e.data.slice(0,7)).filter(m=>m!==mesFiltro))].length;
+  if(mesesHistorico>=4) score+=20; else if(mesesHistorico>=3) score+=15; else if(mesesHistorico>=2) score+=10; else if(mesesHistorico>=1) score+=5;
+
+  // Estabilidade do fator entre semanas (só se tiver dados suficientes)
+  if(nDias>=14){
+    const semana1 = diasLancados.slice(0,7);
+    const semana2 = diasLancados.slice(7,14);
+    const s1idx = R(semana1.reduce((a,e)=>a+(indiceParaData(e.data)||1),0));
+    const s2idx = R(semana2.reduce((a,e)=>a+(indiceParaData(e.data)||1),0));
+    const f1 = s1idx>0 ? R(semana1.reduce((a,e)=>a+totalE(e.data),0))/s1idx : 1;
+    const f2 = s2idx>0 ? R(semana2.reduce((a,e)=>a+totalE(e.data),0))/s2idx : 1;
+    const variacao = Math.abs(f1-f2)/Math.max(f1,f2,0.01);
+    if(variacao<0.05) score+=15; else if(variacao<0.12) score+=8;
+  }
+
+  // Penalidades — só detectar outlier nos dados históricos, não no mês atual
+  const outlierHistorico = ST.entradas.some(e=>{
+    if(e.data.startsWith(mesFiltro)) return false;
+    const v = totalE(e.data);
+    // Outlier real = dia com mais de 3x a média geral
+    const mediaGeral = R(ST.entradas.reduce((a,en)=>a+totalE(en.data),0)/Math.max(ST.entradas.length,1));
+    return v > mediaGeral * 3;
+  });
+  if(outlierHistorico) score-=5; // penalidade reduzida — IQR já trata o problema
+
+  // Fator muito fora do normal = mês atípico
+  if(fator>1.4||fator<0.6) score-=8;
+
+  // Feriados sem dados históricos = incerteza adicional
+  const feriadosNoMes = Array.from({length:diasNoMes},(_,i)=>ay+'-'+am+'-'+String(i+1).padStart(2,'0')).filter(isFeriado);
+  if(feriadosNoMes.length>0 && indices[7]===0) score-=5;
+
+  score = Math.max(0, Math.min(100, score));
+
+  // 6. Meta do mês
+  const metaDias = Array.from({length:diasNoMes},(_,i)=>ay+'-'+am+'-'+String(i+1).padStart(2,'0'));
+  const metaTotal = R(metaDias.reduce((a,d)=>a+(getMeta(d)||0),0));
+
+  // 7. Semáforo
+  let semaforoClass='warn', semaforoPct='?';
+  if(score>=40 && metaTotal>0){
+    const desvio = (projecaoTotal-metaTotal)/metaTotal;
+    if(desvio>=0.03){semaforoClass='ok';semaforoPct='+'+Math.round(desvio*100)+'%';}
+    else if(desvio>=-0.03){semaforoClass='warn';semaforoPct=Math.round(desvio*100)+'%';}
+    else{semaforoClass='err';semaforoPct=Math.round(desvio*100)+'%';}
+  }
+
+  // Se não há nenhum dia lançado no mês atual, score máximo é 15
+  if(nDias===0){
+    score=Math.min(score,15);
+    semaforoClass='warn';
+    semaforoPct='?';
+  }
+
+  return {projecaoTotal, score, fator, nDias, metaTotal, semaforoClass, semaforoPct, diasNoMes, feriadosExpirados, feriadosNoMes};
+}
+
+function renderSemaforo(cls,pct){
+  const verde = cls==='ok' ? 'active-green' : '';
+  const amarelo = cls==='warn' ? 'active-yellow' : '';
+  const vermelho = cls==='err' ? 'active-red' : '';
+  return `<div class="semaforo" aria-label="Semáforo: ${cls==='ok'?'verde':cls==='warn'?'amarelo':'vermelho'}">
+    <div class="sem-luz ${vermelho}"></div>
+    <div class="sem-luz ${amarelo}"></div>
+    <div class="sem-luz ${verde}"></div>
+    <div class="sem-pct">${pct}</div>
+  </div>`;
+}
+
+function renderTermometro(score){
+  const cls = score>=70?'ok':score>=40?'warn':'err';
+  const lbl = score>=70?'Alta':score>=40?'Moderada':'Baixa';
+  return `<div class="termo-row">
+    <span style="font-size:10px;color:var(--muted)">Confiabilidade</span>
+    <span class="termo-badge ${cls}">${lbl} · ${score}%</span>
+  </div>
+  <div class="termo-track"><div class="termo-fill ${cls}" style="width:${score}%"></div></div>`;
 }
 
 function calcProjecao(){
@@ -2633,6 +2722,77 @@ const hdDate=document.getElementById('hd-date');
 if(hdDate) hdDate.textContent=hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 // initListeners chamado pelo onAuthStateChanged
+
+// ── REGISTRO GLOBAL DE FUNÇÕES ──────────────────────────
+window.doLogin_fn = _doLogin_int;
+window.doReset_fn = _doReset_int;
+window.doLogout_fn = _doLogout_int;
+window.toggleSenha_fn = _toggleSenha_int;
+window.showView_fn = _showView_int;
+window.nav_fn = _nav_int;
+window.navMes_fn = _navMes_int;
+window.navHoje_fn = _navHoje_int;
+window.openPopup_fn = _openPopup_int;
+window.closePopup_fn = _closePopup_int;
+window.switchPopupTab_fn = _switchPopupTab_int;
+window.selectPsMod_fn = _selectPsMod_int;
+window.onPsTipoChange_fn = _onPsTipoChange_int;
+window.savePopupSaida_fn = _savePopupSaida_int;
+window.savePopupEntrada_fn = _savePopupEntrada_int;
+window.clearPopupSaida_fn = _clearPopupSaida_int;
+window.clearPopupEntrada_fn = _clearPopupEntrada_int;
+window.selectPsMeses_fn = _selectPsMeses_int;
+window.onTipoChange_fn = _onTipoChange_int;
+window.selectSMod_fn = _selectSMod_int;
+window.saveSaidaUnificada_fn = _saveSaidaUnificada_int;
+window.clearSaidaUnificada_fn = _clearSaidaUnificada_int;
+window.saveEntrada_fn = _saveEntrada_int;
+window.clearEntrada_fn = _clearEntrada_int;
+window.saveMeta_fn = _saveMeta_int;
+window.selectMeses_fn = _selectMeses_int;
+window.onCpTipoChange_fn = _onCpTipoChange_int;
+window.selectCpMeses_fn = _selectCpMeses_int;
+window.saveConta_fn = _saveConta_int;
+window.clearConta_fn = _clearConta_int;
+window.abrirEstender_fn = _abrirEstender_int;
+window.closeModalEstender_fn = _closeModalEstender_int;
+window.selectEstMeses_fn = _selectEstMeses_int;
+window.saveEstender_fn = _saveEstender_int;
+window.openEdit_fn = _openEdit_int;
+window.closeEdit_fn = _closeEdit_int;
+window.saveEdit_fn = _saveEdit_int;
+window.showContasView_fn = _showContasView_int;
+window._pagarConta_fn = __pagarConta_int;
+window._pagarFatura_fn = __pagarFatura_int;
+window._delConta_fn = __delConta_int;
+window._delSaida_fn = __delSaida_int;
+function initListeners(){
+  let loaded={entradas:false,saidas:false,metas:false,contas:false};
+  function checkReady(){
+    if(loaded.entradas&&loaded.saidas&&loaded.metas&&loaded.contas){
+      document.getElementById('loading').classList.remove('show');
+      setSyncStatus('ok');dbReady=true;renderAll();seedMetas();
+    }
+  }
+  onSnapshot(collection(db,'entradas'),snap=>{ST.entradas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.entradas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('entradas:',err.message);});
+  onSnapshot(collection(db,'saidas'),snap=>{ST.saidas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.saidas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('saidas:',err.message);});
+  onSnapshot(collection(db,'metas'),snap=>{ST.metas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.metas=true;checkReady();if(dbReady)renderAll();},(err)=>{setSyncStatus('err');console.error('metas:',err.message);});
+  onSnapshot(collection(db,'contas'),snap=>{ST.contas=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.contas=true;checkReady();if(dbReady)renderContas();},(err)=>{setSyncStatus('err');console.error('contas:',err.message);});
+}
+
+async function seedMetas(){
+  for(const[d,v]of Object.entries(METAS_MAIO)){
+    if(!ST.metas.find(m=>m.data===d))await setDoc(doc(db,'metas',d),{data:d,valor:v});
+  }
+}
+
+// ── RENDER SAÚDE ────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════
+// ITEM 18: PROJEÇÃO SAZONAL + TERMÔMETRO + SEMÁFORO
+// ═══════════════════════════════════════════════════════════
+
+
 </script>
 </body>
 </html>
