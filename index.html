@@ -397,6 +397,26 @@ select option{font-weight:400;color:#1A1210}
 .cal-legenda{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .cal-leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
 .cal-leg-sq{width:10px;height:10px;border-radius:2px}
+
+.cfg-grupo-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.cfg-grupo-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--br-xl);border-bottom:0.5px solid var(--border)}
+.cfg-grupo-nome{font-size:13px;font-weight:500;color:var(--text)}
+.cfg-grupo-actions{display:flex;gap:6px;align-items:center}
+.cfg-btn-add{font-size:11px;padding:4px 10px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:'Inter',sans-serif}
+.cfg-btn-add:hover{background:var(--br-xl);color:var(--br-d)}
+.cfg-tipo-item{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:0.5px solid var(--border)}
+.cfg-tipo-item:last-child{border-bottom:none}
+.cfg-tipo-nome{font-size:13px;color:var(--text)}
+.cfg-tipo-actions{display:flex;gap:4px}
+.cfg-ico-btn{width:28px;height:28px;border-radius:6px;border:0.5px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.cfg-ico-btn:hover{background:var(--br-xl);color:var(--br-d)}
+.cfg-ico-btn.danger:hover{background:var(--err-l);color:var(--err)}
+.cfg-inline-edit{display:flex;gap:6px;align-items:center;padding:8px 16px;background:var(--br-xl);border-bottom:0.5px solid var(--border)}
+.cfg-inline-edit input{flex:1;font-family:'Inter',sans-serif;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);outline:none}
+.cfg-inline-edit input:focus{border-color:var(--br)}
+.cfg-inline-btn{padding:6px 12px;font-size:12px;font-weight:500;border-radius:6px;border:none;cursor:pointer;font-family:'Inter',sans-serif}
+.cfg-inline-btn.ok{background:var(--br-d);color:#fff}
+.cfg-inline-btn.cancel{background:var(--surface);border:0.5px solid var(--border);color:var(--muted)}
 </style>
 </head>
 <body>
@@ -667,6 +687,7 @@ select option{font-weight:400;color:#1A1210}
     <button class="nb" onclick="nav('meta',this)"><i class="ti ti-target"></i> Meta</button>
     <button class="nb" onclick="nav('contas',this)"><i class="ti ti-calendar-due"></i> Contas a pagar</button>
     <button class="nb" onclick="nav('lancar',this)"><i class="ti ti-plus"></i> Lançar</button>
+    <button class="nb" onclick="nav('config',this)"><i class="ti ti-settings"></i> Config</button>
   </div>
 
   <!-- SAÚDE -->
@@ -824,6 +845,16 @@ select option{font-weight:400;color:#1A1210}
         <div id="fatura-amex"></div>
       </div>
     </div>
+  </div>
+
+
+  <!-- CONFIGURAÇÕES -->
+  <div class="pnl" id="pnl-config">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="sec-hd"><i class="ti ti-tag"></i><span>Tipos de despesa</span></div>
+      <button class="fbtn" onclick="cfgNovoGrupo()" style="font-size:12px"><i class="ti ti-plus"></i> Novo grupo</button>
+    </div>
+    <div id="cfg-tipos-lista"></div>
   </div>
 
   <!-- LANÇAR -->
@@ -2413,6 +2444,232 @@ function renderMeta(){
 
 // ── RENDER CONTAS A PAGAR ────────────────────────────────
 
+
+// ── CONFIGURAÇÕES — TIPOS DE DESPESA ────────────────────
+// Tipos padrão (populados no Firestore na primeira vez)
+const TIPOS_PADRAO = [
+  {grupo:'Despesas Operacionais (Fixas)', tagcls:'op', recorrente:true, itens:['Aluguel','Acordos','Água','Energia','Internet (operacional)']},
+  {grupo:'Despesas com Pessoal', tagcls:'pess', recorrente:true, itens:['Folha de Pagamento','Encargos','Benefícios']},
+  {grupo:'Custos de Mercadoria (Variáveis)', tagcls:'merc', recorrente:false, itens:['Compras de Insumos e Produtos']},
+  {grupo:'Despesas de Manutenção', tagcls:'man', recorrente:false, itens:['Manutenção Preventiva/Corretiva','Material de Limpeza e Higiene','Utensílios e Móveis']},
+  {grupo:'Despesas de Vendas e Marketing', tagcls:'vend', recorrente:false, itens:['Embalagens','Taxas de Cartão/Aplicativos','Marketing/Divulgação']},
+  {grupo:'Despesas Administrativas e Fixas', tagcls:'adm', recorrente:false, itens:['Contabilidade','Softwares/Sistemas','Internet e Telefone','Seguros e Segurança']},
+  {grupo:'Impostos e Encargos', tagcls:'imp', recorrente:false, itens:['DAS/Simples Nacional','Encargos Sociais','Tarifas Bancárias']},
+  {grupo:'Logística', tagcls:'log', recorrente:false, itens:['Combustível e Manutenção de Veículo']},
+];
+
+let ST_TIPOS = []; // carregado do Firestore
+
+async function initTipos(){
+  const snap = await onSnapshotOnce(collection(db,'config_tipos'));
+  if(snap.empty){
+    // Popular Firestore com tipos padrão
+    for(const g of TIPOS_PADRAO){
+      await addDoc(collection(db,'config_tipos'),{
+        grupo: g.grupo, tagcls: g.tagcls,
+        recorrente: g.recorrente, itens: g.itens,
+        ordem: TIPOS_PADRAO.indexOf(g)
+      });
+    }
+  }
+  // Listener em tempo real
+  onSnapshot(collection(db,'config_tipos'), snap=>{
+    ST_TIPOS = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+    renderTipos();
+    atualizarDropdowns();
+  });
+}
+
+async function onSnapshotOnce(ref){
+  return new Promise(resolve=>{
+    const unsub = onSnapshot(ref, snap=>{ unsub(); resolve(snap); });
+  });
+}
+
+function renderTipos(){
+  const lista = document.getElementById('cfg-tipos-lista');
+  if(!lista) return;
+  if(!ST_TIPOS.length){
+    lista.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px">Carregando...</div>';
+    return;
+  }
+  lista.innerHTML = ST_TIPOS.map(g=>`
+    <div class="cfg-grupo-card" id="cfg-g-${g.id}">
+      <div class="cfg-grupo-hd">
+        <div class="cfg-grupo-nome">${g.grupo}</div>
+        <div class="cfg-grupo-actions">
+          <button class="cfg-btn-add" onclick="cfgAddTipo('${g.id}')"><i class="ti ti-plus" style="font-size:12px"></i> Novo tipo</button>
+          <button class="cfg-ico-btn" onclick="cfgEditGrupo('${g.id}')" aria-label="Renomear grupo"><i class="ti ti-edit" style="font-size:14px"></i></button>
+          <button class="cfg-ico-btn danger" onclick="cfgDelGrupo('${g.id}')" aria-label="Excluir grupo"><i class="ti ti-trash" style="font-size:14px"></i></button>
+        </div>
+      </div>
+      <div id="cfg-g-itens-${g.id}">
+        ${(g.itens||[]).map((item,idx)=>`
+          <div class="cfg-tipo-item" id="cfg-item-${g.id}-${idx}">
+            <div class="cfg-tipo-nome">${item}</div>
+            <div class="cfg-tipo-actions">
+              <button class="cfg-ico-btn" onclick="cfgEditTipo('${g.id}',${idx})" aria-label="Editar tipo"><i class="ti ti-edit" style="font-size:14px"></i></button>
+              <button class="cfg-ico-btn danger" onclick="cfgDelTipo('${g.id}',${idx})" aria-label="Excluir tipo"><i class="ti ti-trash" style="font-size:14px"></i></button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// Atualizar todos os dropdowns do sistema com os tipos do Firestore
+function atualizarDropdowns(){
+  const ids = ['s-tipo','cp-tipo','ps-tipo','ed-cp-tipo'];
+  ids.forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      ST_TIPOS.map(g=>
+        `<optgroup label="${g.grupo}">${(g.itens||[]).map(item=>
+          `<option value="${item}|${g.tagcls}|${g.grupo}">${item}</option>`
+        ).join('')}</optgroup>`
+      ).join('');
+    sel.value = val; // restaurar seleção
+  });
+}
+
+// ── AÇÕES ────────────────────────────────────────────────
+function cfgInlineForm(containerId, valorAtual, onSave){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  const div = document.createElement('div');
+  div.className = 'cfg-inline-edit';
+  div.innerHTML = `<input type="text" value="${valorAtual}" placeholder="Nome..." id="cfg-input-inline">
+    <button class="cfg-inline-btn ok" onclick="(${onSave.toString()})()">Salvar</button>
+    <button class="cfg-inline-btn cancel" onclick="this.closest('.cfg-inline-edit').remove()">Cancelar</button>`;
+  container.prepend(div);
+  div.querySelector('input').focus();
+}
+
+cfgNovoGrupo = () => {
+  const lista = document.getElementById('cfg-tipos-lista');
+  if(!lista) return;
+  const div = document.createElement('div');
+  div.className = 'cfg-inline-edit';
+  div.style.marginBottom = '12px';
+  div.innerHTML = `<input type="text" placeholder="Nome do grupo..." id="cfg-novo-grupo-input">
+    <button class="cfg-inline-btn ok" onclick="cfgSalvarNovoGrupo()">Criar</button>
+    <button class="cfg-inline-btn cancel" onclick="this.closest('.cfg-inline-edit').remove()">Cancelar</button>`;
+  lista.prepend(div);
+  div.querySelector('input').focus();
+};
+
+cfgSalvarNovoGrupo = async() => {
+  const inp = document.getElementById('cfg-novo-grupo-input');
+  const nome = inp ? inp.value.trim() : '';
+  if(!nome){toast('Informe o nome do grupo.',true);return;}
+  await addDoc(collection(db,'config_tipos'),{
+    grupo:nome, tagcls:'custom', recorrente:false,
+    itens:[], ordem: ST_TIPOS.length
+  });
+  inp.closest('.cfg-inline-edit').remove();
+  toast('Grupo criado!');
+};
+
+cfgEditGrupo = (gid) => {
+  const g = ST_TIPOS.find(x=>x.id===gid);
+  if(!g) return;
+  const card = document.getElementById('cfg-g-'+gid);
+  if(!card) return;
+  const hd = card.querySelector('.cfg-grupo-hd');
+  const inp = document.createElement('div');
+  inp.className = 'cfg-inline-edit';
+  inp.innerHTML = `<input type="text" value="${g.grupo}" id="cfg-edit-grupo-input-${gid}">
+    <button class="cfg-inline-btn ok" onclick="cfgSalvarEditGrupo('${gid}')">Salvar</button>
+    <button class="cfg-inline-btn cancel" onclick="this.closest('.cfg-inline-edit').remove()">Cancelar</button>`;
+  hd.after(inp);
+  inp.querySelector('input').focus();
+};
+
+cfgSalvarEditGrupo = async(gid) => {
+  const inp = document.getElementById('cfg-edit-grupo-input-'+gid);
+  const nome = inp ? inp.value.trim() : '';
+  if(!nome){toast('Informe o nome.',true);return;}
+  await updateDoc(doc(db,'config_tipos',gid),{grupo:nome});
+  inp.closest('.cfg-inline-edit').remove();
+  toast('Grupo renomeado!');
+};
+
+cfgDelGrupo = async(gid) => {
+  const g = ST_TIPOS.find(x=>x.id===gid);
+  if(!g) return;
+  if(!confirm(`Excluir o grupo "${g.grupo}" e todos os seus tipos? Esta ação não pode ser desfeita.`)) return;
+  await deleteDoc(doc(db,'config_tipos',gid));
+  toast('Grupo excluído!');
+};
+
+cfgAddTipo = (gid) => {
+  const card = document.getElementById('cfg-g-'+gid);
+  if(!card) return;
+  const itensDiv = document.getElementById('cfg-g-itens-'+gid);
+  const inp = document.createElement('div');
+  inp.className = 'cfg-inline-edit';
+  inp.innerHTML = `<input type="text" placeholder="Nome do tipo..." id="cfg-add-tipo-input-${gid}">
+    <button class="cfg-inline-btn ok" onclick="cfgSalvarAddTipo('${gid}')">Adicionar</button>
+    <button class="cfg-inline-btn cancel" onclick="this.closest('.cfg-inline-edit').remove()">Cancelar</button>`;
+  itensDiv.prepend(inp);
+  inp.querySelector('input').focus();
+};
+
+cfgSalvarAddTipo = async(gid) => {
+  const g = ST_TIPOS.find(x=>x.id===gid);
+  if(!g) return;
+  const inp = document.getElementById('cfg-add-tipo-input-'+gid);
+  const nome = inp ? inp.value.trim() : '';
+  if(!nome){toast('Informe o nome do tipo.',true);return;}
+  const novosItens = [...(g.itens||[]), nome];
+  await updateDoc(doc(db,'config_tipos',gid),{itens:novosItens});
+  inp.closest('.cfg-inline-edit').remove();
+  toast('Tipo adicionado!');
+};
+
+cfgEditTipo = (gid, idx) => {
+  const g = ST_TIPOS.find(x=>x.id===gid);
+  if(!g) return;
+  const itemDiv = document.getElementById('cfg-item-'+gid+'-'+idx);
+  if(!itemDiv) return;
+  const nomeAtual = g.itens[idx]||'';
+  const inp = document.createElement('div');
+  inp.className = 'cfg-inline-edit';
+  inp.innerHTML = `<input type="text" value="${nomeAtual}" id="cfg-edit-tipo-input-${gid}-${idx}">
+    <button class="cfg-inline-btn ok" onclick="cfgSalvarEditTipo('${gid}',${idx})">Salvar</button>
+    <button class="cfg-inline-btn cancel" onclick="this.closest('.cfg-inline-edit').remove()">Cancelar</button>`;
+  itemDiv.after(inp);
+  inp.querySelector('input').focus();
+};
+
+cfgSalvarEditTipo = async(gid, idx) => {
+  const g = ST_TIPOS.find(x=>x.id===gid);
+  if(!g) return;
+  const inp = document.getElementById('cfg-edit-tipo-input-'+gid+'-'+idx);
+  const nome = inp ? inp.value.trim() : '';
+  if(!nome){toast('Informe o nome.',true);return;}
+  const novosItens = [...(g.itens||[])];
+  novosItens[idx] = nome;
+  await updateDoc(doc(db,'config_tipos',gid),{itens:novosItens});
+  inp.closest('.cfg-inline-edit').remove();
+  toast('Tipo atualizado!');
+};
+
+cfgDelTipo = async(gid, idx) => {
+  const g = ST_TIPOS.find(x=>x.id===gid);
+  if(!g) return;
+  const nome = g.itens[idx];
+  if(!confirm(`Excluir o tipo "${nome}"?`)) return;
+  const novosItens = [...(g.itens||[])];
+  novosItens.splice(idx,1);
+  await updateDoc(doc(db,'config_tipos',gid),{itens:novosItens});
+  toast('Tipo excluído!');
+};
+
 // ── CALENDÁRIO CONTAS A PAGAR ────────────────────────────
 function renderCalendarioContas(contas){
   const cal = document.getElementById('cal-contas');
@@ -2890,6 +3147,7 @@ if(hdDate) hdDate.textContent=hoje.toLocaleDateString('pt-BR',{weekday:'long',da
 // initListeners chamado pelo onAuthStateChanged
 
 function initListeners(){
+  initTipos();
   let loaded={entradas:false,saidas:false,metas:false,contas:false};
   function checkReady(){
     if(loaded.entradas&&loaded.saidas&&loaded.metas&&loaded.contas){
