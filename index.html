@@ -2521,7 +2521,7 @@ function renderContas(){
         <div class="cp-icon ${isCard?'card':iconCls}"><i class="ti ti-${isCard?'credit-card':'building'}" style="font-size:16px"></i></div>
         <div>
           <div class="cp-nome">${c.descricao}</div>
-          <div class="cp-det">${c.modalidade==='prazo7'?'Prazo 7 dias':c.modalidade==='prazo14'?'Prazo 14 dias':c.modalidade==='prazo30'?'Prazo 30 dias':c.modalidade==='santander'?'Santander Free':'Amex'} · ${c.categoria.split('|')[0]||c.categoria}</div>
+          <div class="cp-det">${c.categoria.split('|')[0]||'—'} · ${c.modalidade==='prazo7'?'Prazo 7d':c.modalidade==='prazo14'?'Prazo 14d':c.modalidade==='prazo30'?'Prazo 30d':c.modalidade==='santander'?'Santander Free':c.modalidade==='amex'?'Amex':'À vista'}</div>
         </div>
       </div>
       <div class="cp-right">
