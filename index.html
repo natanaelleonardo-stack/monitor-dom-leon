@@ -731,9 +731,9 @@ select option{font-weight:400;color:#1A1210}
     <div id="alerta-recorrentes-e"></div>
     <div class="kpi-row" id="kpi-entradas"></div>
     <div class="chart-card" style="margin-bottom:20px">
-      <div class="chart-hd"><i class="ti ti-chart-donut"></i><span>Mix de recebimentos</span></div>
+      <div class="chart-hd"><i class="ti ti-chart-bar-left"></i><span>Mix de recebimentos</span></div>
       <div class="chart-legend" id="leg-mix"></div>
-      <div style="position:relative;height:220px"><canvas id="ch-mix"></canvas></div>
+      <div id="wrap-ch-mix" style="position:relative;height:220px"><canvas id="ch-mix"></canvas></div>
     </div>
     <div class="sec-hd"><i class="ti ti-table"></i><span>Detalhamento por dia</span></div>
     <div class="tbl-wrap"><table>
@@ -755,7 +755,7 @@ select option{font-weight:400;color:#1A1210}
     <div class="chart-card" style="margin-bottom:20px">
       <div class="chart-hd"><i class="ti ti-chart-bar"></i><span>Saídas por grupo de despesa</span></div>
       <div class="chart-legend" id="leg-grupos"></div>
-      <div style="position:relative;height:220px"><canvas id="ch-grupos"></canvas></div>
+      <div id="wrap-ch-grupos" style="position:relative;height:220px"><canvas id="ch-grupos"></canvas></div>
     </div>
     <div class="sec-hd"><i class="ti ti-list-details"></i><span>Lançamentos detalhados</span></div>
     <div class="tbl-wrap"><table>
@@ -2348,7 +2348,26 @@ function renderEntradas(){
     <div class="kpi"><div class="kpi-label">Dias lançados</div><div class="kpi-val">${sorted.length}</div></div>
   `;
   document.getElementById('leg-mix').innerHTML=labels.map((l,i)=>`<div class="leg-item"><span class="leg-sq" style="background:${PAL[i]}"></span>${l} ${gt>0?pct(totais[i]/gt*100):'0 %'}</div>`).join('');
-  mkChart('ch-mix',{type:'doughnut',data:{labels,datasets:[{data:totais,backgroundColor:PAL.slice(0,6),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false}}}});
+  // Ordenar por valor decrescente
+  const mixPairs = labels.map((l,i)=>({label:l,val:totais[i],color:PAL[i]}))
+    .filter(x=>x.val>0)
+    .sort((a,b)=>b.val-a.val);
+  mkChart('ch-mix',{type:'bar',data:{
+    labels: mixPairs.map(x=>x.label),
+    datasets:[{
+      data: mixPairs.map(x=>x.val),
+      backgroundColor: mixPairs.map(x=>x.color),
+      borderRadius:4, borderWidth:0
+    }]
+  },options:{
+    responsive:true, maintainAspectRatio:false,
+    indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+brl(ctx.raw)}}},
+    scales:{
+      x:{ticks:{font:{size:10},color:CGR,callback:v=>v>=1000?'R$'+Math.round(v/1000)+'k':'R$'+v},grid:{color:'rgba(0,0,0,.05)'}},
+      y:{ticks:{font:{size:11},color:CGR},grid:{display:false}}
+    }
+  }});
   const tbody=document.getElementById('tb-entradas');
   if(!sorted.length){tbody.innerHTML='<tr><td colspan="14" class="empty">Nenhuma entrada lançada ainda.</td></tr>';return;}
   tbody.innerHTML=sorted.map(e=>{
@@ -2373,7 +2392,39 @@ function renderSaidas(){
     <div class="kpi"><div class="kpi-label">Lançamentos</div><div class="kpi-val">${totalLanc}</div></div>
   `;
   document.getElementById('leg-grupos').innerHTML=Object.values(GMAP).map((l,i)=>`<div class="leg-item"><span class="leg-sq" style="background:${PAL[i]}"></span>${l}</div>`).join('');
-  mkChart('ch-grupos',{type:'bar',data:{labels:Object.values(GMAP),datasets:[{data:gT,backgroundColor:PAL.slice(0,8),borderRadius:4,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:CGR,callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:{size:11},color:CGR},grid:{display:false}}}}});
+  // Ordenar grupos por valor decrescente
+  const gruposPairs = Object.entries(GMAP)
+    .map(([k,v],i)=>({label:v,val:gT[i],color:PAL[i%PAL.length]}))
+    .filter(x=>x.val>0)
+    .sort((a,b)=>b.val-a.val);
+  // Labels curtos para caber no eixo Y
+  const labelsGrupos = gruposPairs.map(x=>{
+    const l = x.label;
+    if(l.length>22) return l.slice(0,20)+'...';
+    return l;
+  });
+  mkChart('ch-grupos',{type:'bar',data:{
+    labels: labelsGrupos,
+    datasets:[{
+      data: gruposPairs.map(x=>x.val),
+      backgroundColor: gruposPairs.map(x=>x.color),
+      borderRadius:4, borderWidth:0
+    }]
+  },options:{
+    responsive:true, maintainAspectRatio:false,
+    indexAxis:'y',
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{
+        title:ctx=>gruposPairs[ctx[0].dataIndex].label,
+        label:ctx=>' '+brl(ctx.raw)
+      }}
+    },
+    scales:{
+      x:{ticks:{font:{size:10},color:CGR,callback:v=>v>=1000?'R$'+Math.round(v/1000)+'k':'R$'+v},grid:{color:'rgba(0,0,0,.05)'}},
+      y:{ticks:{font:{size:10},color:CGR},grid:{display:false}}
+    }
+  }});
   const det=document.getElementById('tb-saidas-det');
   const sorted=[...saidasMes].sort((a,b)=>a.data.localeCompare(b.data));
   if(!sorted.length){det.innerHTML='<tr><td colspan="6" class="empty">Nenhuma saída lançada ainda.</td></tr>';return;}
