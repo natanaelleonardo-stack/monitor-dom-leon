@@ -417,6 +417,28 @@ select option{font-weight:400;color:#1A1210}
 .cfg-inline-btn{padding:6px 12px;font-size:12px;font-weight:500;border-radius:6px;border:none;cursor:pointer;font-family:'Inter',sans-serif}
 .cfg-inline-btn.ok{background:var(--br-d);color:#fff}
 .cfg-inline-btn.cancel{background:var(--surface);border:0.5px solid var(--border);color:var(--muted)}
+
+.dia-overlay{position:fixed;inset:0;background:rgba(26,18,16,.5);z-index:650;display:none;align-items:center;justify-content:center;padding:1rem}
+.dia-overlay.show{display:flex}
+.dia-box{background:var(--surface);border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 8px 32px rgba(74,55,40,.2)}
+.dia-hd{background:var(--br-d);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.dia-hd-title{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.dia-hd-title i{font-size:16px;color:#C4A882}
+.dia-x{width:26px;height:26px;border-radius:50%;background:rgba(196,168,130,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C4A882;font-family:inherit}
+.dia-body{padding:14px 18px;max-height:400px;overflow-y:auto}
+.dia-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.dia-item:last-child{border-bottom:none}
+.dia-it-left{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;padding-right:8px}
+.dia-it-nome{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dia-it-det{font-size:11px;color:var(--muted)}
+.dia-it-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.dia-it-val{font-size:13px;font-weight:600}
+.dia-badge{font-size:9px;font-weight:500;padding:1px 7px;border-radius:20px}
+.dia-badge.at{background:#FCEBEB;color:#791F1F}
+.dia-badge.pd{background:#FEF8E7;color:#633806}
+.dia-badge.pg{background:#EAF3DE;color:#27500A}
+.dia-footer{padding:12px 18px;background:var(--br-xl);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--text)}
+.dia-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
@@ -436,6 +458,22 @@ select option{font-weight:400;color:#1A1210}
     <div class="edit-footer">
       <button class="fbtn primary" id="btn-edit-save" onclick="saveEdit()"><i class="ti ti-check"></i> Salvar alterações</button>
       <button class="fbtn" onclick="closeEdit()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- POPUP DETALHES DO DIA -->
+<div class="dia-overlay" id="dia-overlay">
+  <div class="dia-box">
+    <div class="dia-hd">
+      <div class="dia-hd-title"><i class="ti ti-calendar-event"></i> <span id="dia-titulo">--</span></div>
+      <button class="dia-x" onclick="closeDiaPopup()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="dia-body" id="dia-body"></div>
+    <div class="dia-footer">
+      <span>Total do dia</span>
+      <span id="dia-total">R$ 0,00</span>
     </div>
   </div>
 </div>
@@ -2830,9 +2868,9 @@ function gerarRelatorioContas(){
         <div class="c1">${n}</div>
         <div class="c2">${desc.slice(0,29)}</div>
         <div class="c3">${tipo.slice(0,30)}</div>
-        <div class="c4 cr" style="color:${cor}">${val}</div>
+        <div class="c4 cr">${val}</div>
         <div class="c5 cc">${venc}</div>
-        <div class="c6 cr" style="color:${cor}">${status}</div>
+        <div class="c6 cr">${status}</div>
       </div>`;
     }).join('');
   }
@@ -2848,22 +2886,44 @@ body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#1A1210;ba
 .center{text-align:center}
 .muted{color:#9E7A56}
 .bold{font-weight:700}
-.sep{border:none;border-top:1px solid #4A3728;margin:8px 0;display:block}
-.sep-dot{border:none;border-top:1px dashed #B5A898;margin:6px 0;display:block}
+.sep{border:none;border-top:1px solid #1A1210;margin:8px 0;display:block}
+.sep-dot{border:none;border-top:1px dashed #1A1210;margin:6px 0;display:block}
 .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;margin:6px 0}
-.kpi-lbl{font-size:9px;color:#9E7A56}
-.rpt-thead{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:3px 0;font-size:10px;letter-spacing:.04em;font-weight:700;color:#4A3728;border-bottom:1px solid #4A3728;margin-top:4px}
-.rpt-item{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:2px 0;border-bottom:1px dotted #E8DDD3}
+.kpi-lbl{font-size:9px;color:#1A1210}
+.rpt-thead{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:3px 0;font-size:10px;letter-spacing:.04em;font-weight:700;color:#1A1210;border-bottom:1px solid #1A1210;margin-top:4px}
+.rpt-item{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:2px 0;border-bottom:1px dotted #1A1210;color:#1A1210}
 .rpt-item.alt{background:#FAF7F3}
-.rpt-sub{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:2px 0;font-weight:700;border-top:1px dashed #B5A898;margin-bottom:6px}
-.rpt-section{padding:3px 0;font-weight:700;font-size:10px;letter-spacing:.05em;color:#4A3728;margin-top:4px}
-.rpt-total{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:3px 0;font-weight:700;font-size:12px}
-.rpt-empty{color:#9E7A56;padding:2px 0;font-size:10px}
+.rpt-sub{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:2px 0;font-weight:700;border-top:1px dashed #1A1210;margin-bottom:6px;color:#1A1210}
+.rpt-section{padding:3px 0;font-weight:700;font-size:10px;letter-spacing:.05em;color:#1A1210;margin-top:4px}
+.rpt-total{display:grid;grid-template-columns:22px 190px 198px 82px 68px 1fr;gap:7px;padding:3px 0;font-weight:700;font-size:12px;color:#1A1210}
+.rpt-empty{color:#1A1210;padding:2px 0;font-size:10px}
 .cr{text-align:right}.cc{text-align:center}
 .c1{width:22px}.c2{width:190px;overflow:hidden;white-space:nowrap}
-.c3{width:198px;overflow:hidden;white-space:nowrap;color:#7C5C3E}
+.c3{width:198px;overflow:hidden;white-space:nowrap;color:#1A1210}
 .c4{width:82px}.c5{width:68px}.c6{flex:1}
 @media print{body{padding:16px 20px}}
+
+.dia-overlay{position:fixed;inset:0;background:rgba(26,18,16,.5);z-index:650;display:none;align-items:center;justify-content:center;padding:1rem}
+.dia-overlay.show{display:flex}
+.dia-box{background:var(--surface);border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 8px 32px rgba(74,55,40,.2)}
+.dia-hd{background:var(--br-d);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.dia-hd-title{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.dia-hd-title i{font-size:16px;color:#C4A882}
+.dia-x{width:26px;height:26px;border-radius:50%;background:rgba(196,168,130,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C4A882;font-family:inherit}
+.dia-body{padding:14px 18px;max-height:400px;overflow-y:auto}
+.dia-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.dia-item:last-child{border-bottom:none}
+.dia-it-left{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;padding-right:8px}
+.dia-it-nome{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dia-it-det{font-size:11px;color:var(--muted)}
+.dia-it-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.dia-it-val{font-size:13px;font-weight:600}
+.dia-badge{font-size:9px;font-weight:500;padding:1px 7px;border-radius:20px}
+.dia-badge.at{background:#FCEBEB;color:#791F1F}
+.dia-badge.pd{background:#FEF8E7;color:#633806}
+.dia-badge.pg{background:#EAF3DE;color:#27500A}
+.dia-footer{padding:12px 18px;background:var(--br-xl);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--text)}
+.dia-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
@@ -2882,13 +2942,13 @@ body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#1A1210;ba
 </div>
 <div class="rpt-section">-- EM ATRASO ${'-'.repeat(64)}</div>
 ${linhas(atrasadas,'ATRASO','#A32D2D')}
-<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr" style="color:#A32D2D">${brl(totAt)}</div><div></div><div></div></div>
+<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr">${brl(totAt)}</div><div></div><div></div></div>
 <div class="rpt-section">-- PENDENTES ${'-'.repeat(63)}</div>
 ${linhas(pendentes,'PENDENTE','#BA7517')}
-<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr" style="color:#BA7517">${brl(totPd)}</div><div></div><div></div></div>
+<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr">${brl(totPd)}</div><div></div><div></div></div>
 <div class="rpt-section">-- PAGOS ${'-'.repeat(67)}</div>
 ${linhas(pagas,'PAGO','#27500A')}
-<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr" style="color:#27500A">${brl(totPg)}</div><div></div><div></div></div>
+<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr">${brl(totPg)}</div><div></div><div></div></div>
 <hr class="sep">
 <div class="rpt-total"><div></div><div>TOTAL GERAL</div><div></div><div class="cr">${brl(totGeral)}</div><div></div><div></div></div>
 <hr class="sep">
@@ -2950,7 +3010,7 @@ function renderCalendarioContas(contas){
     if(totPago>0)     pills += `<div class="cal-pill pg"><span class="cal-dot pg"></span><span class="cal-pval pg">${brl(totPago)}</span></div>`;
     if(totGeral>0)    pills += `<div class="cal-pill tot"><span class="cal-plabel">Total</span><span class="cal-pval tot">${brl(totGeral)}</span></div>`;
 
-    html += `<div class="${cls}" onclick="scrollToDay('${dataStr}')">
+    html += `<div class="${cls}" onclick="openDiaPopup('${dataStr}')">
       <div class="cal-num">${d}</div>
       ${pills}
     </div>`;
@@ -2959,11 +3019,45 @@ function renderCalendarioContas(contas){
   cal.innerHTML = html;
 }
 
-function scrollToDay(data){
-  // Rolar para o item da lista com aquele vencimento
-  const items = document.querySelectorAll('[data-venc="'+data+'"]');
-  if(items.length) items[0].scrollIntoView({behavior:'smooth', block:'center'});
+function openDiaPopup(data){
+  const contas = ST.contas.filter(c=>c.vencimento===data);
+  const td = todayLocal();
+  const[y,m,d] = data.split('-');
+  const mesesNomes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  document.getElementById('dia-titulo').textContent = parseInt(d)+' de '+mesesNomes[parseInt(m)-1];
+
+  const body = document.getElementById('dia-body');
+  if(!contas.length){
+    body.innerHTML = '<div class="dia-empty">Nenhuma conta neste dia</div>';
+    document.getElementById('dia-total').textContent = brl(0);
+  } else {
+    let total = 0;
+    body.innerHTML = contas.map(c=>{
+      const st = c.status==='pago'?'pg': c.vencimento<td?'at':'pd';
+      const stLabel = c.status==='pago'?'Pago': c.vencimento<td?'Em atraso':'Pendente';
+      const tipo = (c.categoria||'').split('|')[0]||'';
+      const mod = c.modalidade==='santander'?'Santander':c.modalidade==='amex'?'Amex':c.modalidade==='prazo7'?'Prazo 7d':c.modalidade==='prazo14'?'Prazo 14d':c.modalidade==='prazo30'?'Prazo 30d':'À vista';
+      total += R(c.valor||0);
+      return `<div class="dia-item">
+        <div class="dia-it-left">
+          <div class="dia-it-nome">${c.descricao||tipo}</div>
+          <div class="dia-it-det">${mod}${tipo?' · '+tipo:''}</div>
+        </div>
+        <div class="dia-it-right">
+          <div class="dia-it-val">${brl(c.valor||0)}</div>
+          <span class="dia-badge ${st}">${stLabel}</span>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('dia-total').textContent = brl(R(total));
+  }
+
+  document.getElementById('dia-overlay').classList.add('show');
 }
+
+closeDiaPopup = () => {
+  document.getElementById('dia-overlay').classList.remove('show');
+};
 
 function renderContas(){
   const td=today();
