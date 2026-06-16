@@ -2362,10 +2362,22 @@ function renderEntradas(){
         const txt = brl(val);
         ctx.save();
         ctx.font='bold 10px Inter,sans-serif';
-        ctx.fillStyle='rgba(255,255,255,0.92)';
-        ctx.textAlign='right';
-        ctx.textBaseline='middle';
-        ctx.fillText(txt, bar.x - 6, bar.y);
+        const txtW = ctx.measureText(txt).width;
+        const barW = bar.x - bar.base;
+        const padding = 6;
+        if(txtW + padding*2 <= barW){
+          // Cabe dentro — branco, ponta interna direita
+          ctx.fillStyle='rgba(255,255,255,0.92)';
+          ctx.textAlign='right';
+          ctx.textBaseline='middle';
+          ctx.fillText(txt, bar.x - padding, bar.y);
+        } else {
+          // Não cabe — escuro, lado externo direito
+          ctx.fillStyle='var(--color-text-secondary, #7A6A5E)';
+          ctx.textAlign='left';
+          ctx.textBaseline='middle';
+          ctx.fillText(txt, bar.x + padding, bar.y);
+        }
         ctx.restore();
       });
     }
@@ -2431,10 +2443,22 @@ function renderSaidas(){
         const txt = brl(val);
         ctx.save();
         ctx.font='bold 10px Inter,sans-serif';
-        ctx.fillStyle='rgba(255,255,255,0.92)';
-        ctx.textAlign='right';
-        ctx.textBaseline='middle';
-        ctx.fillText(txt, bar.x - 6, bar.y);
+        const txtW = ctx.measureText(txt).width;
+        const barW = bar.x - bar.base;
+        const padding = 6;
+        if(txtW + padding*2 <= barW){
+          // Cabe dentro — branco, ponta interna direita
+          ctx.fillStyle='rgba(255,255,255,0.92)';
+          ctx.textAlign='right';
+          ctx.textBaseline='middle';
+          ctx.fillText(txt, bar.x - padding, bar.y);
+        } else {
+          // Não cabe — escuro, lado externo direito
+          ctx.fillStyle='var(--color-text-secondary, #7A6A5E)';
+          ctx.textAlign='left';
+          ctx.textBaseline='middle';
+          ctx.fillText(txt, bar.x + padding, bar.y);
+        }
         ctx.restore();
       });
     }
