@@ -439,6 +439,43 @@ select option{font-weight:400;color:#1A1210}
 .dia-badge.pg{background:#EAF3DE;color:#27500A}
 .dia-footer{padding:12px 18px;background:var(--br-xl);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--text)}
 .dia-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+
+.mw-overlay{position:fixed;inset:0;background:rgba(26,18,16,.5);z-index:700;display:none;align-items:center;justify-content:center;padding:1rem}
+.mw-overlay.show{display:flex}
+.mw-box{background:var(--surface);border-radius:16px;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(74,55,40,.2)}
+.mw-hd{background:var(--br-d);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
+.mw-hd-title{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.mw-hd-title i{font-size:16px;color:#C4A882}
+.mw-x{width:26px;height:26px;border-radius:50%;background:rgba(196,168,130,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C4A882;font-family:inherit}
+.mw-body{padding:18px}
+.mw-sugest-box{background:var(--br-xl);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.mw-sugest-lbl{font-size:11px;color:var(--muted);margin-bottom:4px}
+.mw-sugest-val{font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px}
+.mw-sugest-just{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.mw-btn-row{display:flex;gap:8px;margin-top:10px}
+.mw-btn{flex:1;padding:9px;font-size:12px;font-weight:500;border-radius:8px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px;font-family:'Inter',sans-serif;border:none}
+.mw-btn.primary{background:var(--br-d);color:#fff}
+.mw-btn.secondary{background:var(--surface);border:0.5px solid var(--border);color:var(--muted)}
+.mw-fg{margin-top:16px;padding-top:14px;border-top:0.5px dashed var(--border)}
+.mw-fg label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.mw-input-manual{width:100%;padding:8px;border:0.5px solid var(--border);border-radius:6px;text-align:right;font-size:14px;font-family:'Inter',sans-serif}
+.mw-tbl-wrap{margin-top:4px;border:0.5px solid var(--border);border-radius:8px;overflow:hidden}
+.mw-tbl-row{display:grid;grid-template-columns:62px 50px 1fr;align-items:center;padding:5px 10px;border-bottom:0.5px dotted var(--border);font-size:12px}
+.mw-tbl-row:last-child{border-bottom:none}
+.mw-tbl-row.hd{background:var(--br-xl);font-weight:600;color:var(--muted);font-size:10px;padding:6px 10px}
+.mw-dow{font-size:10px;font-weight:500}
+.mw-dow.normal{color:var(--muted)}
+.mw-dow.dom,.mw-dow.fer{color:#A32D2D}
+.mw-dow.sab{color:#185FA5}
+.mw-input-edit{width:100%;padding:3px 7px;border:0.5px solid var(--border);border-radius:5px;font-size:11px;text-align:right;font-family:'Inter',sans-serif}
+.mw-input-edit.dom,.mw-input-edit.fer{border-color:#F09595}
+.mw-input-edit.sab{border-color:#85B7EB}
+.mw-leg{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
+.mw-leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.mw-leg-dot{width:7px;height:7px;border-radius:50%}
+.mw-total-check{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:0.5px dashed var(--border)}
+.mw-total-check.ok{color:#27500A;font-weight:600}
+.mw-step-desc{font-size:11px;color:var(--muted);margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -462,6 +499,18 @@ select option{font-weight:400;color:#1A1210}
   </div>
 </div>
 
+
+
+<!-- WIZARD META MENSAL -->
+<div class="mw-overlay" id="mw-overlay">
+  <div class="mw-box">
+    <div class="mw-hd">
+      <div class="mw-hd-title"><i class="ti ti-target-arrow"></i> <span id="mw-titulo">Meta do mês</span></div>
+      <button class="mw-x" onclick="closeMetaWizard()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mw-body" id="mw-body"></div>
+  </div>
+</div>
 
 <!-- POPUP DETALHES DO DIA -->
 <div class="dia-overlay" id="dia-overlay">
@@ -809,6 +858,7 @@ select option{font-weight:400;color:#1A1210}
       <div class="mes-nav-label" id="mes-meta-label">Maio 2026</div>
       <button class="mes-nav-btn" onclick="navMes(1)"><i class="ti ti-chevron-right"></i></button>
       <button class="mes-nav-hoje" id="btn-hoje-meta" onclick="navHoje()">Hoje</button>
+      <button class="mes-nav-hoje" onclick="abrirMetaWizard()" style="margin-left:auto"><i class="ti ti-edit" style="font-size:13px"></i> Meta</button>
     </div>
     <div id="alerta-recorrentes-m"></div>
     <div class="kpi-row" id="kpi-meta"></div>
@@ -2543,6 +2593,228 @@ function renderSaidas(){
 }
 
 // ── RENDER META ──────────────────────────────────────────
+
+// ── WIZARD META MENSAL ───────────────────────────────────
+let mwEstado = {}; // {totalDesejado, distribuicao: {data: valor}}
+
+function calcIndicesSazonais(){
+  const indices = [0,1,2,3,4,5,6,7,8].map(cat=>{
+    const vals = ST.entradas
+      .filter(e=>{
+        if(e.data.startsWith(mesFiltro)) return false;
+        return catSazonal(e.data) === cat;
+      })
+      .map(e=>R((e.prazo||0)+(e.cortesia||0)+(e.credito||0)+(e.debito||0)+(e.dinheiro||0)+(e.pix||0)));
+    if(!vals.length) return 0;
+    const sorted = [...vals].sort((a,b)=>a-b);
+    const q1 = sorted[Math.floor(sorted.length*0.25)];
+    const q3 = sorted[Math.floor(sorted.length*0.75)];
+    const iqr = q3-q1;
+    const fence = iqr*1.5;
+    const filtered = sorted.filter(v=>v>=q1-fence && v<=q3+fence);
+    return filtered.length ? R(filtered.reduce((a,b)=>a+b,0)/filtered.length) : R(vals.reduce((a,b)=>a+b,0)/vals.length);
+  });
+  function indiceParaData(data){
+    const cat = catSazonal(data);
+    if(indices[cat]>0) return indices[cat];
+    if(cat===7||cat===8) return R((indices[dweek(data)]||0)*0.6);
+    return indices[cat]||0;
+  }
+  return indiceParaData;
+}
+
+function sugerirValorTotal(){
+  const[ay,am] = mesFiltro.split('-');
+  // Buscar até 3 meses anteriores completos
+  const mesesAnteriores = [];
+  for(let i=1;i<=3;i++){
+    let ny=parseInt(ay), nm=parseInt(am)-i;
+    while(nm<1){nm+=12;ny--;}
+    mesesAnteriores.push(ny+'-'+String(nm).padStart(2,'0'));
+  }
+  const totaisMeses = mesesAnteriores.map(mk=>{
+    const dias = ST.entradas.filter(e=>e.data.startsWith(mk));
+    return R(dias.reduce((a,e)=>a+totalE(e.data),0));
+  }).filter(v=>v>0);
+
+  if(!totaisMeses.length){
+    return {valor:0, justificativa:'Sem histórico suficiente — informe o valor manualmente.'};
+  }
+  const media = R(totaisMeses.reduce((a,b)=>a+b,0)/totaisMeses.length);
+  // Fator de ajuste: crescimento médio entre os meses (se houver 2+)
+  let fatorAjuste = 0.03; // padrão conservador +3%
+  if(totaisMeses.length>=2){
+    const crescimentos = [];
+    for(let i=0;i<totaisMeses.length-1;i++){
+      if(totaisMeses[i+1]>0) crescimentos.push((totaisMeses[i]-totaisMeses[i+1])/totaisMeses[i+1]);
+    }
+    if(crescimentos.length) fatorAjuste = crescimentos.reduce((a,b)=>a+b,0)/crescimentos.length;
+  }
+  fatorAjuste = Math.max(-0.15, Math.min(0.15, fatorAjuste)); // limitar entre -15% e +15%
+  const valorSugerido = R(media * (1+fatorAjuste));
+  const sinal = fatorAjuste>=0?'+':'';
+  const justificativa = `Média dos últimos ${totaisMeses.length} mes${totaisMeses.length>1?'es':''} (${brl(media)}) com ajuste de ${sinal}${(fatorAjuste*100).toFixed(1)}%`;
+  return {valor:valorSugerido, justificativa};
+}
+
+function distribuirSazonalmente(valorTotal){
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+  const indiceParaData = calcIndicesSazonais();
+  const datas = [];
+  for(let d=1;d<=diasNoMes;d++) datas.push(ay+'-'+am+'-'+String(d).padStart(2,'0'));
+
+  let indicesDias = datas.map(d=>indiceParaData(d)||1);
+  const somaIndices = indicesDias.reduce((a,b)=>a+b,0) || datas.length;
+
+  const dist = {};
+  datas.forEach((d,i)=>{
+    dist[d] = R((indicesDias[i]/somaIndices) * valorTotal);
+  });
+  return dist;
+}
+
+abrirMetaWizard = () => {
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+  const metasExistentes = ST.metas.filter(m=>m.data.startsWith(mesFiltro));
+
+  document.getElementById('mw-titulo').textContent = 'Meta — ' + mesLabel(mesFiltro);
+
+  if(metasExistentes.length > 0){
+    // Já existe meta — pular direto para edição
+    const dist = {};
+    for(let d=1;d<=diasNoMes;d++){
+      const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
+      dist[dataStr] = getMeta(dataStr);
+    }
+    mwEstado = {distribuicao: dist};
+    renderMwEtapa2();
+  } else {
+    // Sem meta — mostrar sugestão
+    const sug = sugerirValorTotal();
+    mwEstado = {valorSugerido: sug.valor};
+    renderMwEtapa1(sug);
+  }
+
+  document.getElementById('mw-overlay').classList.add('show');
+};
+
+closeMetaWizard = () => {
+  document.getElementById('mw-overlay').classList.remove('show');
+};
+
+function renderMwEtapa1(sug){
+  const body = document.getElementById('mw-body');
+  body.innerHTML = `
+    <div class="mw-step-desc">Sugestão automática com base no histórico de vendas.</div>
+    <div class="mw-sugest-box">
+      <div class="mw-sugest-lbl">VALOR SUGERIDO PARA ${mesLabel(mesFiltro).toUpperCase()}</div>
+      <div class="mw-sugest-val">${brl(sug.valor)}</div>
+      <div class="mw-sugest-just"><i class="ti ti-trending-up" style="font-size:13px"></i> ${sug.justificativa}</div>
+    </div>
+    <div class="mw-btn-row">
+      <button class="mw-btn primary" onclick="mwUsarSugestao(${sug.valor})" ${sug.valor<=0?'disabled':''}><i class="ti ti-check" style="font-size:13px"></i> Usar sugestão</button>
+      <button class="mw-btn secondary" onclick="document.getElementById('mw-input-manual').focus()"><i class="ti ti-edit" style="font-size:13px"></i> Alterar valor</button>
+    </div>
+    <div class="mw-fg">
+      <label>Ou informe outro valor manualmente</label>
+      <input class="mw-input-manual" type="text" id="mw-input-manual" placeholder="0,00" onkeydown="if(event.key==='Enter')mwUsarValorManual()">
+      <button class="mw-btn primary" style="margin-top:8px;width:100%" onclick="mwUsarValorManual()"><i class="ti ti-arrow-right" style="font-size:13px"></i> Continuar com este valor</button>
+    </div>
+  `;
+}
+
+mwUsarSugestao = (valor) => {
+  const dist = distribuirSazonalmente(valor);
+  mwEstado.distribuicao = dist;
+  renderMwEtapa2();
+};
+
+mwUsarValorManual = () => {
+  const inp = document.getElementById('mw-input-manual');
+  const valor = R(parseFloat((inp.value||'0').replace(/\./g,'').replace(',','.'))||0);
+  if(valor<=0){ toast('Informe um valor válido.', true); return; }
+  const dist = distribuirSazonalmente(valor);
+  mwEstado.distribuicao = dist;
+  renderMwEtapa2();
+};
+
+function renderMwEtapa2(){
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+  const dws = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const body = document.getElementById('mw-body');
+
+  let html = `
+    <div class="mw-step-desc">Distribuição sazonal por dia. Edite qualquer valor antes de salvar.</div>
+    <div class="mw-tbl-wrap">
+      <div class="mw-tbl-row hd"><div>Data</div><div>Dia</div><div style="text-align:right">Meta (R$)</div></div>
+  `;
+
+  for(let d=1;d<=diasNoMes;d++){
+    const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
+    const dw = dweek(dataStr);
+    const fer = isFeriado(dataStr);
+    const cls = fer?'fer':dw===0?'dom':dw===6?'sab':'normal';
+    const valor = mwEstado.distribuicao[dataStr] || 0;
+    html += `<div class="mw-tbl-row">
+      <div>${String(d).padStart(2,'0')}/${am}</div>
+      <div class="mw-dow ${cls}">${dws[dw]}${fer?' *':''}</div>
+      <div><input class="mw-input-edit ${cls!=='normal'?cls:''}" id="mw-d-${dataStr}" value="${valor.toFixed(2).replace('.',',')}" onchange="mwAtualizaSoma()"></div>
+    </div>`;
+  }
+
+  html += `</div>
+    <div class="mw-leg">
+      <div class="mw-leg-i"><div class="mw-leg-dot" style="background:#185FA5"></div>Sábado</div>
+      <div class="mw-leg-i"><div class="mw-leg-dot" style="background:#A32D2D"></div>Domingo / Feriado</div>
+    </div>
+    <div class="mw-total-check" id="mw-total-check">Soma atual: ${brl(Object.values(mwEstado.distribuicao).reduce((a,b)=>a+b,0))}</div>
+    <div class="mw-btn-row">
+      <button class="mw-btn secondary" onclick="mwVoltarEtapa1()"><i class="ti ti-arrow-back-up" style="font-size:13px"></i> Redistribuir</button>
+      <button class="mw-btn primary" onclick="mwSalvarMetas()"><i class="ti ti-check" style="font-size:13px"></i> Confirmar e salvar</button>
+    </div>
+  `;
+  body.innerHTML = html;
+}
+
+mwAtualizaSoma = () => {
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+  let soma = 0;
+  for(let d=1;d<=diasNoMes;d++){
+    const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
+    const inp = document.getElementById('mw-d-'+dataStr);
+    if(inp) soma += R(parseFloat((inp.value||'0').replace(/\./g,'').replace(',','.'))||0);
+  }
+  document.getElementById('mw-total-check').textContent = 'Soma atual: ' + brl(soma);
+};
+
+mwVoltarEtapa1 = () => {
+  const sug = sugerirValorTotal();
+  renderMwEtapa1(sug);
+};
+
+mwSalvarMetas = async() => {
+  const[ay,am] = mesFiltro.split('-');
+  const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
+  setSyncStatus('loading');
+  try{
+    for(let d=1;d<=diasNoMes;d++){
+      const dataStr = ay+'-'+am+'-'+String(d).padStart(2,'0');
+      const inp = document.getElementById('mw-d-'+dataStr);
+      const valor = R(parseFloat((inp.value||'0').replace(/\./g,'').replace(',','.'))||0);
+      await setDoc(doc(db,'metas',dataStr),{data:dataStr, valor});
+    }
+    toast('Metas salvas com sucesso!');
+    closeMetaWizard();
+  } catch(e){
+    toast('Erro ao salvar metas: '+e.message, true);
+  }
+};
+
+
 function renderMeta(){
   const[my,mm]=mesFiltro.split('-');
   const diasNoMes=new Date(parseInt(my),parseInt(mm),0).getDate();
@@ -2924,6 +3196,43 @@ body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#1A1210;ba
 .dia-badge.pg{background:#EAF3DE;color:#27500A}
 .dia-footer{padding:12px 18px;background:var(--br-xl);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--text)}
 .dia-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+
+.mw-overlay{position:fixed;inset:0;background:rgba(26,18,16,.5);z-index:700;display:none;align-items:center;justify-content:center;padding:1rem}
+.mw-overlay.show{display:flex}
+.mw-box{background:var(--surface);border-radius:16px;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(74,55,40,.2)}
+.mw-hd{background:var(--br-d);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
+.mw-hd-title{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.mw-hd-title i{font-size:16px;color:#C4A882}
+.mw-x{width:26px;height:26px;border-radius:50%;background:rgba(196,168,130,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C4A882;font-family:inherit}
+.mw-body{padding:18px}
+.mw-sugest-box{background:var(--br-xl);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.mw-sugest-lbl{font-size:11px;color:var(--muted);margin-bottom:4px}
+.mw-sugest-val{font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px}
+.mw-sugest-just{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.mw-btn-row{display:flex;gap:8px;margin-top:10px}
+.mw-btn{flex:1;padding:9px;font-size:12px;font-weight:500;border-radius:8px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px;font-family:'Inter',sans-serif;border:none}
+.mw-btn.primary{background:var(--br-d);color:#fff}
+.mw-btn.secondary{background:var(--surface);border:0.5px solid var(--border);color:var(--muted)}
+.mw-fg{margin-top:16px;padding-top:14px;border-top:0.5px dashed var(--border)}
+.mw-fg label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.mw-input-manual{width:100%;padding:8px;border:0.5px solid var(--border);border-radius:6px;text-align:right;font-size:14px;font-family:'Inter',sans-serif}
+.mw-tbl-wrap{margin-top:4px;border:0.5px solid var(--border);border-radius:8px;overflow:hidden}
+.mw-tbl-row{display:grid;grid-template-columns:62px 50px 1fr;align-items:center;padding:5px 10px;border-bottom:0.5px dotted var(--border);font-size:12px}
+.mw-tbl-row:last-child{border-bottom:none}
+.mw-tbl-row.hd{background:var(--br-xl);font-weight:600;color:var(--muted);font-size:10px;padding:6px 10px}
+.mw-dow{font-size:10px;font-weight:500}
+.mw-dow.normal{color:var(--muted)}
+.mw-dow.dom,.mw-dow.fer{color:#A32D2D}
+.mw-dow.sab{color:#185FA5}
+.mw-input-edit{width:100%;padding:3px 7px;border:0.5px solid var(--border);border-radius:5px;font-size:11px;text-align:right;font-family:'Inter',sans-serif}
+.mw-input-edit.dom,.mw-input-edit.fer{border-color:#F09595}
+.mw-input-edit.sab{border-color:#85B7EB}
+.mw-leg{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
+.mw-leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.mw-leg-dot{width:7px;height:7px;border-radius:50%}
+.mw-total-check{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:0.5px dashed var(--border)}
+.mw-total-check.ok{color:#27500A;font-weight:600}
+.mw-step-desc{font-size:11px;color:var(--muted);margin-bottom:10px}
 </style>
 </head>
 <body>
