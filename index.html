@@ -780,7 +780,7 @@ select option{font-weight:400;color:#1A1210}
         <div class="leg-item"><span class="leg-sq" style="background:#7C5C3E"></span>Venda</div>
         <div class="leg-item"><span class="leg-sq" style="background:#C4A882;outline:1px dashed #7C5C3E"></span>Meta</div>
       </div>
-      <div style="position:relative;height:220px"><canvas id="ch-meta"></canvas></div>
+      <div id="wrap-ch-meta" style="position:relative;height:220px"><canvas id="ch-meta"></canvas></div>
     </div>
     <div class="sec-hd"><i class="ti ti-calendar"></i><span id="meta-mes-label">Metas de maio / 2026</span></div>
     <div class="meta-grid" id="meta-grid"></div>
@@ -2352,6 +2352,24 @@ function renderEntradas(){
   const mixPairs = labels.map((l,i)=>({label:l,val:totais[i],color:PAL[i]}))
     .filter(x=>x.val>0)
     .sort((a,b)=>b.val-a.val);
+  const pluginBarLabels = {
+    id:'barLabels',
+    afterDatasetsDraw(chart){
+      const{ctx,data}=chart;
+      chart.getDatasetMeta(0).data.forEach((bar,i)=>{
+        const val = data.datasets[0].data[i];
+        if(!val||val<=0) return;
+        const txt = brl(val);
+        ctx.save();
+        ctx.font='bold 10px Inter,sans-serif';
+        ctx.fillStyle='rgba(255,255,255,0.92)';
+        ctx.textAlign='right';
+        ctx.textBaseline='middle';
+        ctx.fillText(txt, bar.x - 6, bar.y);
+        ctx.restore();
+      });
+    }
+  };
   mkChart('ch-mix',{type:'bar',data:{
     labels: mixPairs.map(x=>x.label),
     datasets:[{
@@ -2364,10 +2382,10 @@ function renderEntradas(){
     indexAxis:'y',
     plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+brl(ctx.raw)}}},
     scales:{
-      x:{ticks:{font:{size:10},color:CGR,callback:v=>v>=1000?'R$'+Math.round(v/1000)+'k':'R$'+v},grid:{color:'rgba(0,0,0,.05)'}},
+      x:{display:false},
       y:{ticks:{font:{size:11},color:CGR},grid:{display:false}}
     }
-  }});
+  },plugins:[pluginBarLabels]});
   const tbody=document.getElementById('tb-entradas');
   if(!sorted.length){tbody.innerHTML='<tr><td colspan="14" class="empty">Nenhuma entrada lançada ainda.</td></tr>';return;}
   tbody.innerHTML=sorted.map(e=>{
@@ -2403,6 +2421,24 @@ function renderSaidas(){
     if(l.length>22) return l.slice(0,20)+'...';
     return l;
   });
+  const pluginBarLabelsG = {
+    id:'barLabelsG',
+    afterDatasetsDraw(chart){
+      const{ctx,data}=chart;
+      chart.getDatasetMeta(0).data.forEach((bar,i)=>{
+        const val = data.datasets[0].data[i];
+        if(!val||val<=0) return;
+        const txt = brl(val);
+        ctx.save();
+        ctx.font='bold 10px Inter,sans-serif';
+        ctx.fillStyle='rgba(255,255,255,0.92)';
+        ctx.textAlign='right';
+        ctx.textBaseline='middle';
+        ctx.fillText(txt, bar.x - 6, bar.y);
+        ctx.restore();
+      });
+    }
+  };
   mkChart('ch-grupos',{type:'bar',data:{
     labels: labelsGrupos,
     datasets:[{
@@ -2421,10 +2457,10 @@ function renderSaidas(){
       }}
     },
     scales:{
-      x:{ticks:{font:{size:10},color:CGR,callback:v=>v>=1000?'R$'+Math.round(v/1000)+'k':'R$'+v},grid:{color:'rgba(0,0,0,.05)'}},
+      x:{display:false},
       y:{ticks:{font:{size:10},color:CGR},grid:{display:false}}
     }
-  }});
+  },plugins:[pluginBarLabelsG]});
   const det=document.getElementById('tb-saidas-det');
   const sorted=[...saidasMes].sort((a,b)=>a.data.localeCompare(b.data));
   if(!sorted.length){det.innerHTML='<tr><td colspan="6" class="empty">Nenhuma saída lançada ainda.</td></tr>';return;}
