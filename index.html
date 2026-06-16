@@ -813,10 +813,13 @@ select option{font-weight:400;color:#1A1210}
     <div id="view-vencimentos">
       <!-- CALENDÁRIO — sempre visível -->
       <div class="cal-container">
-        <div class="cal-legenda">
-          <div class="cal-leg"><div class="cal-leg-sq" style="background:#FEF8E7;border:0.5px solid #E8C87A"></div> Pendente</div>
-          <div class="cal-leg"><div class="cal-leg-sq" style="background:#FCEBEB;border:0.5px solid #F09595"></div> Em atraso</div>
-          <div class="cal-leg"><div class="cal-leg-sq" style="background:#EAF3DE;border:0.5px solid #C0DD97"></div> Pago</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="cal-legenda" style="margin-bottom:0">
+            <div class="cal-leg"><div class="cal-leg-sq" style="background:#FEF8E7;border:0.5px solid #E8C87A"></div> Pendente</div>
+            <div class="cal-leg"><div class="cal-leg-sq" style="background:#FCEBEB;border:0.5px solid #F09595"></div> Em atraso</div>
+            <div class="cal-leg"><div class="cal-leg-sq" style="background:#EAF3DE;border:0.5px solid #C0DD97"></div> Pago</div>
+          </div>
+          <button onclick="gerarRelatorioContas()" style="padding:6px 14px;font-size:11px;font-weight:500;border-radius:6px;border:none;background:var(--br-d);color:#C4A882;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif"><i class="ti ti-file-text" style="font-size:13px"></i> Gerar relatório</button>
         </div>
         <div class="cal-grid-wrap" id="cal-contas"></div>
       </div>
@@ -2781,6 +2784,123 @@ cfgDelTipo = async(gid, idx) => {
   toast('Tipo excluído!');
 };
 
+
+// ── RELATÓRIO CONTAS A PAGAR ─────────────────────────────
+function gerarRelatorioContas(){
+  const[ay,am] = mesFiltro.split('-');
+  const mesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(am)-1];
+  const td = todayLocal();
+  const agora = new Date();
+  const hora = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const dataGer = td.split('-').reverse().join('/') + ' ' + hora;
+
+  // Filtrar e ordenar contas do mês
+  const contas = [...ST.contas]
+    .filter(c=>c.vencimento&&c.vencimento.startsWith(mesFiltro))
+    .sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
+
+  const atrasadas = contas.filter(c=>c.status!=='pago'&&c.vencimento<td);
+  const pendentes = contas.filter(c=>c.status!=='pago'&&c.vencimento>=td);
+  const pagas     = contas.filter(c=>c.status==='pago');
+
+  const totAt = R(atrasadas.reduce((a,c)=>a+R(c.valor||0),0));
+  const totPd = R(pendentes.reduce((a,c)=>a+R(c.valor||0),0));
+  const totPg = R(pagas.reduce((a,c)=>a+R(c.valor||0),0));
+  const totGeral = R(totAt+totPd+totPg);
+
+  function fmtVenc(v){return v?v.split('-').reverse().join('/'):'--'}
+  function fmtMod(m){
+    if(m==='santander') return 'Santander';
+    if(m==='amex') return 'Amex';
+    if(m==='prazo7') return 'Prazo 7d';
+    if(m==='prazo14') return 'Prazo 14d';
+    if(m==='prazo30') return 'Prazo 30d';
+    return 'A vista';
+  }
+  function linhas(lista, status, cor){
+    if(!lista.length) return '<div class="rpt-empty">Nenhum registro</div>';
+    let n = 0;
+    return lista.map(c=>{
+      n++;
+      const tipo = (c.categoria||'').split('|')[0]||c.descricao||'--';
+      const desc = c.descricao||tipo;
+      const venc = fmtVenc(c.vencimento);
+      const val = brl(c.valor||0);
+      return `<div class="rpt-item${n%2===0?' alt':''}">
+        <div class="c1">${n}</div>
+        <div class="c2">${desc.slice(0,20)}</div>
+        <div class="c3">${tipo.slice(0,18)}</div>
+        <div class="c4 cr" style="color:${cor}">${val}</div>
+        <div class="c5 cc">${venc}</div>
+        <div class="c6 cr" style="color:${cor}">${status}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Contas a Pagar — ${mesNome} ${ay}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#1A1210;background:#fff;padding:32px 40px;line-height:1.35}
+.center{text-align:center}
+.muted{color:#9E7A56}
+.bold{font-weight:700}
+.sep{border:none;border-top:1px solid #4A3728;margin:8px 0;display:block}
+.sep-dot{border:none;border-top:1px dashed #B5A898;margin:6px 0;display:block}
+.kpis{display:grid;grid-template-columns:1fr 1fr 1fr;margin:6px 0}
+.kpi-lbl{font-size:9px;color:#9E7A56}
+.rpt-thead{display:grid;grid-template-columns:22px 150px 130px 90px 82px 1fr;padding:3px 0;font-size:10px;letter-spacing:.04em;font-weight:700;color:#4A3728;border-bottom:1px solid #4A3728;margin-top:4px}
+.rpt-item{display:grid;grid-template-columns:22px 150px 130px 90px 82px 1fr;padding:2px 0;border-bottom:1px dotted #E8DDD3}
+.rpt-item.alt{background:#FAF7F3}
+.rpt-sub{display:grid;grid-template-columns:22px 150px 130px 90px 82px 1fr;padding:2px 0;font-weight:700;border-top:1px dashed #B5A898;margin-bottom:6px}
+.rpt-section{padding:3px 0;font-weight:700;font-size:10px;letter-spacing:.05em;color:#4A3728;margin-top:4px}
+.rpt-total{display:grid;grid-template-columns:22px 150px 130px 90px 82px 1fr;padding:3px 0;font-weight:700;font-size:12px}
+.rpt-empty{color:#9E7A56;padding:2px 0;font-size:10px}
+.cr{text-align:right}.cc{text-align:center}
+.c1{width:22px}.c2{width:150px;overflow:hidden;white-space:nowrap}
+.c3{width:130px;overflow:hidden;white-space:nowrap;color:#7C5C3E}
+.c4{width:90px}.c5{width:82px}.c6{flex:1}
+@media print{body{padding:16px 20px}}
+</style>
+</head>
+<body>
+<div class="center bold" style="font-size:13px;letter-spacing:.1em">PADARIA DOM LEON</div>
+<div class="center muted">CONTAS A PAGAR -- ${mesNome.toUpperCase()} ${ay} -- Gerado em ${dataGer}</div>
+<hr class="sep">
+<div class="kpis">
+  <div><div class="kpi-lbl">TOTAL A PAGAR</div><div class="bold" style="color:#A32D2D">${brl(totAt+totPd)}</div></div>
+  <div><div class="kpi-lbl">EM ATRASO</div><div class="bold" style="color:#A32D2D">${brl(totAt)}</div></div>
+  <div><div class="kpi-lbl">JA PAGO</div><div class="bold" style="color:#27500A">${brl(totPg)}</div></div>
+</div>
+<hr class="sep">
+<div class="rpt-thead">
+  <div>#</div><div>DESCRICAO</div><div>TIPO</div>
+  <div class="cr">VALOR</div><div class="cc">VENCTO</div><div class="cr">STATUS</div>
+</div>
+<div class="rpt-section">-- EM ATRASO ${'-'.repeat(44)}</div>
+${linhas(atrasadas,'ATRASO','#A32D2D')}
+<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr" style="color:#A32D2D">${brl(totAt)}</div><div></div><div></div></div>
+<div class="rpt-section">-- PENDENTES ${'-'.repeat(43)}</div>
+${linhas(pendentes,'PENDENTE','#BA7517')}
+<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr" style="color:#BA7517">${brl(totPd)}</div><div></div><div></div></div>
+<div class="rpt-section">-- PAGOS ${'-'.repeat(47)}</div>
+${linhas(pagas,'PAGO','#27500A')}
+<div class="rpt-sub"><div></div><div>Subtotal</div><div></div><div class="cr" style="color:#27500A">${brl(totPg)}</div><div></div><div></div></div>
+<hr class="sep">
+<div class="rpt-total"><div></div><div>TOTAL GERAL</div><div></div><div class="cr">${brl(totGeral)}</div><div></div><div></div></div>
+<hr class="sep">
+<div class="center muted" style="font-size:9px">Padaria Dom Leon · Monitor Operacional · ${mesNome} ${ay} · Pag. 1/1</div>
+<script>window.onload=()=>window.print();<\/script>
+</body>
+</html>`;
+
+  const win = window.open('','_blank','width=800,height=900');
+  win.document.write(html);
+  win.document.close();
+}
 // ── CALENDÁRIO CONTAS A PAGAR ────────────────────────────
 function renderCalendarioContas(contas){
   const cal = document.getElementById('cal-contas');
