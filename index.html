@@ -2657,6 +2657,8 @@ function sugerirValorTotal(){
   return {valor:valorSugerido, justificativa};
 }
 
+function arredondar10(v){ return Math.round(v/10)*10; }
+
 function distribuirSazonalmente(valorTotal){
   const[ay,am] = mesFiltro.split('-');
   const diasNoMes = new Date(parseInt(ay), parseInt(am), 0).getDate();
@@ -2667,10 +2669,20 @@ function distribuirSazonalmente(valorTotal){
   let indicesDias = datas.map(d=>indiceParaData(d)||1);
   const somaIndices = indicesDias.reduce((a,b)=>a+b,0) || datas.length;
 
+  // Distribuir e arredondar para múltiplos de 10
   const dist = {};
   datas.forEach((d,i)=>{
-    dist[d] = R((indicesDias[i]/somaIndices) * valorTotal);
+    dist[d] = arredondar10((indicesDias[i]/somaIndices) * valorTotal);
   });
+
+  // Ajustar diferença de arredondamento no último dia para manter o total exato
+  const somaArredondada = Object.values(dist).reduce((a,b)=>a+b,0);
+  const diferenca = R(valorTotal - somaArredondada);
+  if(Math.abs(diferenca) >= 10 && datas.length){
+    const ultimoDia = datas[datas.length-1];
+    dist[ultimoDia] = arredondar10(dist[ultimoDia] + diferenca);
+  }
+
   return dist;
 }
 
@@ -2715,15 +2727,21 @@ function renderMwEtapa1(sug){
     </div>
     <div class="mw-btn-row">
       <button class="mw-btn primary" onclick="mwUsarSugestao(${sug.valor})" ${sug.valor<=0?'disabled':''}><i class="ti ti-check" style="font-size:13px"></i> Usar sugestão</button>
-      <button class="mw-btn secondary" onclick="document.getElementById('mw-input-manual').focus()"><i class="ti ti-edit" style="font-size:13px"></i> Alterar valor</button>
+      <button class="mw-btn secondary" onclick="mwMostrarCampoManual()"><i class="ti ti-edit" style="font-size:13px"></i> Alterar valor</button>
     </div>
-    <div class="mw-fg">
-      <label>Ou informe outro valor manualmente</label>
-      <input class="mw-input-manual" type="text" id="mw-input-manual" placeholder="0,00" onkeydown="if(event.key==='Enter')mwUsarValorManual()">
+    <div class="mw-fg" id="mw-fg-manual" style="display:none">
+      <label>Informe outro valor manualmente</label>
+      <input class="mw-input-manual" type="number" inputmode="decimal" step="0.01" min="0" id="mw-input-manual" placeholder="0,00" onkeydown="if(event.key==='Enter')mwUsarValorManual()">
       <button class="mw-btn primary" style="margin-top:8px;width:100%" onclick="mwUsarValorManual()"><i class="ti ti-arrow-right" style="font-size:13px"></i> Continuar com este valor</button>
     </div>
   `;
 }
+
+mwMostrarCampoManual = () => {
+  const fg = document.getElementById('mw-fg-manual');
+  fg.style.display = 'block';
+  document.getElementById('mw-input-manual').focus();
+};
 
 mwUsarSugestao = (valor) => {
   const dist = distribuirSazonalmente(valor);
@@ -2733,7 +2751,7 @@ mwUsarSugestao = (valor) => {
 
 mwUsarValorManual = () => {
   const inp = document.getElementById('mw-input-manual');
-  const valor = R(parseFloat((inp.value||'0').replace(/\./g,'').replace(',','.'))||0);
+  const valor = R(parseFloat(inp.value||'0')||0);
   if(valor<=0){ toast('Informe um valor válido.', true); return; }
   const dist = distribuirSazonalmente(valor);
   mwEstado.distribuicao = dist;
