@@ -1127,7 +1127,7 @@ select option{font-weight:400;color:#1A1210}
         </div>
         <div class="fg">
           <label>Forma de pagamento prevista</label>
-          <select id="cp-mod">
+          <select id="cp-mod" onchange="onCpModChange()">
             <option value="avista">À vista</option>
             <option value="prazo7">Prazo 7 dias</option>
             <option value="prazo14">Prazo 14 dias</option>
@@ -3692,12 +3692,26 @@ saveMeta=async()=>{
 
 // ── NOVA CONTA A PAGAR ───────────────────────────────────
 let cpMesesSel = 6;
+const MODALIDADES_RECORRENTES = ['santander','amex'];
 
-onCpTipoChange = () => {
+function cpDeveSerRecorrente(){
   const raw = document.getElementById('cp-tipo').value;
   const grupo = raw ? raw.split('|')[2]||'' : '';
+  const mod = document.getElementById('cp-mod').value;
+  return GRUPOS_RECORRENTES.includes(grupo) || MODALIDADES_RECORRENTES.includes(mod);
+}
+
+function cpAtualizaVisibilidadeRecorrencia(){
   const wrap = document.getElementById('cp-rec-wrap');
-  if(wrap) wrap.style.display = GRUPOS_RECORRENTES.includes(grupo) ? 'block' : 'none';
+  if(wrap) wrap.style.display = cpDeveSerRecorrente() ? 'block' : 'none';
+}
+
+onCpTipoChange = () => {
+  cpAtualizaVisibilidadeRecorrencia();
+};
+
+onCpModChange = () => {
+  cpAtualizaVisibilidadeRecorrencia();
 };
 
 selectCpMeses = (n, btn) => {
@@ -3718,7 +3732,7 @@ saveConta = async() => {
   if(!data||!raw||valor<=0||!venc){toast('Preencha data, tipo, valor e vencimento.',true);return;}
 
   const[tipo,tagcls,grupo] = raw.split('|');
-  const isRec = GRUPOS_RECORRENTES.includes(grupo);
+  const isRec = cpDeveSerRecorrente();
   const mesesInput = parseInt(document.getElementById('cp-meses').value)||0;
   const meses = isRec ? (mesesInput || cpMesesSel || 1) : 1;
   const recId = isRec ? ('rec_'+Date.now()) : null;
