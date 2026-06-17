@@ -3505,7 +3505,7 @@ function renderContas(){
 
   // FATURAS
   function renderFatura(cartao,elId,vencDia){
-    const mes=td.slice(0,7);
+    const mes=mesFiltro;
     const compras=ST.contas.filter(c=>c.modalidade===cartao&&c.compra&&c.compra.startsWith(mes));
     const total=R(compras.reduce((a,b)=>a+R(b.valor),0));
     const fatPaga=compras.length>0&&compras.every(c=>c.status==='pago');
