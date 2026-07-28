@@ -1313,6 +1313,7 @@ function atualizaLabelMes(){
   });
   atualizaBtnHoje();
 }
+atualizaLabelMes(); // sincroniza o label do mês já no carregamento inicial (item 46)
 
 navMes = (dir) => {
   const[y,m] = mesFiltro.split('-');
@@ -2381,7 +2382,8 @@ function renderSaude(){
   const ld = Array.from({length:diasNoMesG},(_,i)=>{
     return gy+'-'+gm+'-'+String(i+1).padStart(2,'0');
   }).filter(d=>d<=todayStr); // só até hoje para meses em andamento
-  const lbl=ld.map(d=>{const[,m,dd]=d.split('-');return dd+'/'+m;});
+  const dwsEvs = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const lbl=ld.map(d=>{const[,m,dd]=d.split('-');return [dd+'/'+m, dwsEvs[dweek(d)]];});
   const fontSize=ld.length>20?9:11;
 
   // Calcular máximo para escala Y sem duplicatas
@@ -2398,34 +2400,78 @@ function renderSaude(){
   const yStep=niceStep(maxVal,5);
   const yMax=Math.ceil(maxVal/yStep)*yStep;
 
+  const fmtCompacto = v => Math.abs(v)>=1000 ? (v/1000).toFixed(1).replace('.',',')+'k' : Math.round(v).toString();
+
+  const pluginEvsLabels = {
+    id:'evsLabels',
+    afterDatasetsDraw(chart){
+      const{ctx}=chart;
+      chart.data.datasets.forEach((ds,dsIndex)=>{
+        const meta = chart.getDatasetMeta(dsIndex);
+        meta.data.forEach((bar,i)=>{
+          const val = ds.data[i];
+          if(!val || val===0) return;
+          ctx.save();
+          ctx.font='bold 8px Inter,sans-serif';
+          ctx.fillStyle = dsIndex===0?'#7C5C3E':'#C0392B';
+          ctx.textAlign='center';
+          ctx.textBaseline='bottom';
+          ctx.fillText(fmtCompacto(val), bar.x, bar.y-3);
+          ctx.restore();
+        });
+      });
+    }
+  };
+
   mkChart('ch-evs',{type:'bar',data:{labels:lbl,datasets:[
     {label:'Entradas',data:evsE,backgroundColor:'#7C5C3E',borderRadius:2},
     {label:'Saídas',data:evsS,backgroundColor:'#C0392B',borderRadius:2}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+  ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:16}},plugins:{legend:{display:false}},scales:{
     x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},
     y:{min:0,max:yMax,ticks:{font:{size:10},color:CGR,stepSize:yStep,callback:v=>{
       if(v>=1000) return 'R$'+(v/1000)+'k';
       return 'R$'+v;
     }},grid:{color:'rgba(0,0,0,.05)'}}
-  }}});
+  }},plugins:[pluginEvsLabels]});
 
   let acc=0;
   const accV=ld.map(d=>{acc=R(acc+totalEMes(d)-totalSMes(d));return acc;});
   const maxAcc=Math.max(...accV.map(Math.abs),1000);
   const accStep=niceStep(maxAcc,5);
   const accMax=Math.ceil(maxAcc/accStep)*accStep;
+
+  const pluginSaldoLabels = {
+    id:'saldoLabels',
+    afterDatasetsDraw(chart){
+      const{ctx}=chart;
+      const meta = chart.getDatasetMeta(0);
+      const vals = chart.data.datasets[0].data;
+      meta.data.forEach((pt,i)=>{
+        const val = vals[i];
+        if(val===undefined||val===null) return;
+        ctx.save();
+        ctx.font='bold 8px Inter,sans-serif';
+        ctx.fillStyle='#2E7D52';
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        ctx.fillText(fmtCompacto(val), pt.x, pt.y-6);
+        ctx.restore();
+      });
+    }
+  };
+
   mkChart('ch-saldo',{type:'line',data:{labels:lbl,datasets:[{
     label:'Saldo',data:accV,borderColor:'#2E7D52',
     backgroundColor:'rgba(46,125,82,.1)',tension:.35,fill:true,
     pointRadius:ld.length>20?2:4,pointBackgroundColor:'#2E7D52',
     pointBorderColor:'#fff',pointBorderWidth:2
-  }]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+  }]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:16}},plugins:{legend:{display:false}},scales:{
     x:{ticks:{font:{size:fontSize},color:CGR,maxRotation:45},grid:{display:false}},
     y:{min:0,max:accMax,ticks:{font:{size:10},color:CGR,stepSize:accStep,callback:v=>{
       if(v>=1000) return 'R$'+(v/1000)+'k';
       return 'R$'+v;
     }},grid:{color:'rgba(0,0,0,.05)'}}
-  }}});
+  }},plugins:[pluginSaldoLabels]});
 }
 
 // ── RENDER ENTRADAS ──────────────────────────────────────
