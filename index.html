@@ -2920,20 +2920,30 @@ function renderMeta(){
   const pctVendaAcum = mAcumCard>0 ? R(vAcumCard/mAcumCard*100,2) : 0;
   const wdsKpi = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
   const diasComVenda = rows.filter(r=>r.venda>0 && r.meta>0);
-  const piorDia = diasComVenda.length ? diasComVenda.reduce((min,r)=>r.pD<min.pD?r:min) : null;
-  let cardMenorAlcance;
-  if(piorDia){
-    const[,pm,pdd] = piorDia.d.split('-');
-    const pdw = wdsKpi[dweek(piorDia.d)];
-    cardMenorAlcance = `<div class="kpi err"><div class="kpi-label">Menor alcance</div><div class="kpi-val" style="font-size:14px;line-height:1.4">${pdw} ${pdd}/${pm}<br>${brl(piorDia.venda)} - ${Math.round(piorDia.pD)}%</div></div>`;
+  const piorDiaPct = diasComVenda.length ? diasComVenda.reduce((min,r)=>r.pD<min.pD?r:min) : null;
+  let cardMenorAlcancePct;
+  if(piorDiaPct){
+    const[,pm,pdd] = piorDiaPct.d.split('-');
+    const pdw = wdsKpi[dweek(piorDiaPct.d)];
+    cardMenorAlcancePct = `<div class="kpi err"><div class="kpi-label">Menor alcance em %</div><div class="kpi-val" style="font-size:14px;line-height:1.4">${pdw} ${pdd}/${pm}<br>${brl(piorDiaPct.venda)} - ${Math.round(piorDiaPct.pD)}%</div></div>`;
   }else{
-    cardMenorAlcance = `<div class="kpi"><div class="kpi-label">Menor alcance</div><div class="kpi-val" style="font-size:14px;color:var(--muted)">Sem dados</div></div>`;
+    cardMenorAlcancePct = `<div class="kpi"><div class="kpi-label">Menor alcance em %</div><div class="kpi-val" style="font-size:14px;color:var(--muted)">Sem dados</div></div>`;
+  }
+  const piorDiaVal = diasComVenda.length ? diasComVenda.reduce((min,r)=>r.venda<min.venda?r:min) : null;
+  let cardMenorAlcanceVal;
+  if(piorDiaVal){
+    const[,vm,vdd] = piorDiaVal.d.split('-');
+    const vdw = wdsKpi[dweek(piorDiaVal.d)];
+    cardMenorAlcanceVal = `<div class="kpi err"><div class="kpi-label">Menor alcance em $</div><div class="kpi-val" style="font-size:14px;line-height:1.4">${vdw} ${vdd}/${vm}<br>${brl(piorDiaVal.venda)} - ${Math.round(piorDiaVal.pD)}%</div></div>`;
+  }else{
+    cardMenorAlcanceVal = `<div class="kpi"><div class="kpi-label">Menor alcance em $</div><div class="kpi-val" style="font-size:14px;color:var(--muted)">Sem dados</div></div>`;
   }
   document.getElementById('kpi-meta').innerHTML=`
     <div class="kpi ${vAcumCard>=mAcumCard?'ok':'err'}"><div class="kpi-label">Venda acumulada</div><div class="kpi-sub" style="font-size:12px;color:var(--muted);margin-bottom:2px">${subVendaAcum}</div><div class="kpi-val ${vAcumCard>=mAcumCard?'ok':'err'}" style="white-space:nowrap;font-size:18px">${brl(vAcumCard)} - ${pct(pctVendaAcum)}</div><div class="kpi-sub" style="font-size:12px;color:var(--muted)">Meta: ${brl(mAcumCard)}</div></div>
     <div class="kpi warn"><div class="kpi-label">Meta total do mês</div><div class="kpi-val" style="font-size:18px">${brl(last.mAcum||0)}</div></div>
     <div class="kpi"><div class="kpi-label">Dias com meta batida</div><div class="kpi-val">${batidos} <span style="font-size:14px;color:var(--muted)">/ ${comMeta}</span></div></div>
-    ${cardMenorAlcance}
+    ${cardMenorAlcancePct}
+    ${cardMenorAlcanceVal}
   `;
   const dwsMeta = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const lbl=maioDates.map(d=>{const[,m,dd]=d.split('-');return [dd+'/'+m, dwsMeta[dweek(d)]];});
