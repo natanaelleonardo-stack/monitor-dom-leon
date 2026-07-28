@@ -2909,7 +2909,7 @@ function renderMeta(){
     if(meta>0){comMeta++;if(venda>=meta)batidos++;}
     rows.push({d,meta,venda,mAcum,vAcum,pD,pA});
   });
-  const last=rows[rows.length-1]||{};const pAcum=last.pA||0;
+  const last=rows[rows.length-1]||{};
   const rowsComVenda = rows.filter(r=>r.venda>0);
   const ultimaVenda = rowsComVenda.length ? rowsComVenda[rowsComVenda.length-1] : null;
   const vAcumCard = ultimaVenda ? ultimaVenda.vAcum : 0;
@@ -2917,6 +2917,7 @@ function renderMeta(){
   let subVendaAcum;
   if(ultimaVenda){const[,sm,sdd]=ultimaVenda.d.split('-');subVendaAcum='Até o dia '+sdd+'/'+sm;}
   else{subVendaAcum='Sem lançamentos';}
+  const pctVendaAcum = mAcumCard>0 ? R(vAcumCard/mAcumCard*100,2) : 0;
   const wdsKpi = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
   const diasComVenda = rows.filter(r=>r.venda>0 && r.meta>0);
   const piorDia = diasComVenda.length ? diasComVenda.reduce((min,r)=>r.pD<min.pD?r:min) : null;
@@ -2929,12 +2930,7 @@ function renderMeta(){
     cardMenorAlcance = `<div class="kpi"><div class="kpi-label">Menor alcance</div><div class="kpi-val" style="font-size:14px;color:var(--muted)">Sem dados</div></div>`;
   }
   document.getElementById('kpi-meta').innerHTML=`
-    <div class="kpi ${pAcum>=100?'ok':'err'}">
-      <div class="kpi-label">Alcance acumulado</div>
-      <div class="kpi-val ${pAcum>=100?'ok':'err'}">${pct(pAcum)}</div>
-      <div class="prog-bar"><div class="prog-fill ${pAcum>=100?'ok':'err'}" style="width:${Math.min(pAcum,100).toFixed(1)}%"></div></div>
-    </div>
-    <div class="kpi ${vAcumCard>=mAcumCard?'ok':'err'}"><div class="kpi-label">Venda acumulada</div><div class="kpi-sub" style="font-size:12px;color:var(--muted);margin-bottom:2px">${subVendaAcum}</div><div class="kpi-val ${vAcumCard>=mAcumCard?'ok':'err'}">${brl(vAcumCard)}</div><div class="kpi-sub" style="font-size:12px;color:var(--muted)">Meta: ${brl(mAcumCard)}</div></div>
+    <div class="kpi ${vAcumCard>=mAcumCard?'ok':'err'}"><div class="kpi-label">Venda acumulada</div><div class="kpi-sub" style="font-size:12px;color:var(--muted);margin-bottom:2px">${subVendaAcum}</div><div class="kpi-val ${vAcumCard>=mAcumCard?'ok':'err'}">${brl(vAcumCard)} - ${pct(pctVendaAcum)}</div><div class="kpi-sub" style="font-size:12px;color:var(--muted)">Meta: ${brl(mAcumCard)}</div></div>
     <div class="kpi warn"><div class="kpi-label">Meta total do mês</div><div class="kpi-val" style="font-size:18px">${brl(last.mAcum||0)}</div></div>
     <div class="kpi"><div class="kpi-label">Dias com meta batida</div><div class="kpi-val">${batidos} <span style="font-size:14px;color:var(--muted)">/ ${comMeta}</span></div></div>
     ${cardMenorAlcance}
