@@ -2930,7 +2930,7 @@ function renderMeta(){
     cardMenorAlcance = `<div class="kpi"><div class="kpi-label">Menor alcance</div><div class="kpi-val" style="font-size:14px;color:var(--muted)">Sem dados</div></div>`;
   }
   document.getElementById('kpi-meta').innerHTML=`
-    <div class="kpi ${vAcumCard>=mAcumCard?'ok':'err'}"><div class="kpi-label">Venda acumulada</div><div class="kpi-sub" style="font-size:12px;color:var(--muted);margin-bottom:2px">${subVendaAcum}</div><div class="kpi-val ${vAcumCard>=mAcumCard?'ok':'err'}">${brl(vAcumCard)} - ${pct(pctVendaAcum)}</div><div class="kpi-sub" style="font-size:12px;color:var(--muted)">Meta: ${brl(mAcumCard)}</div></div>
+    <div class="kpi ${vAcumCard>=mAcumCard?'ok':'err'}"><div class="kpi-label">Venda acumulada</div><div class="kpi-sub" style="font-size:12px;color:var(--muted);margin-bottom:2px">${subVendaAcum}</div><div class="kpi-val ${vAcumCard>=mAcumCard?'ok':'err'}" style="white-space:nowrap;font-size:18px">${brl(vAcumCard)} - ${pct(pctVendaAcum)}</div><div class="kpi-sub" style="font-size:12px;color:var(--muted)">Meta: ${brl(mAcumCard)}</div></div>
     <div class="kpi warn"><div class="kpi-label">Meta total do mês</div><div class="kpi-val" style="font-size:18px">${brl(last.mAcum||0)}</div></div>
     <div class="kpi"><div class="kpi-label">Dias com meta batida</div><div class="kpi-val">${batidos} <span style="font-size:14px;color:var(--muted)">/ ${comMeta}</span></div></div>
     ${cardMenorAlcance}
