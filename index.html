@@ -375,24 +375,28 @@ select option{font-weight:400;color:#1A1210}
 .cal-container{margin-bottom:24px}
 .cal-grid-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:16px}
 .cal-dow{text-align:center;font-size:10px;font-weight:500;color:var(--muted);padding:4px 0;text-transform:uppercase}
-.cal-cell{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;min-height:64px;padding:5px;cursor:default;position:relative}
+.cal-cell{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;height:150px;padding:5px;cursor:default;position:relative;display:flex;flex-direction:column}
 .cal-cell.vazio{background:var(--bg);border-color:transparent}
 .cal-cell.hoje{border:1.5px solid var(--br);border-radius:6px}
 .cal-cell.tem-contas{cursor:pointer}
 .cal-cell.tem-contas:hover{border-color:var(--br-l);background:var(--br-xl)}
-.cal-num{font-size:11px;font-weight:500;color:var(--muted);margin-bottom:3px}
+.cal-day-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;flex-shrink:0}
+.cal-num{font-size:11px;font-weight:500;color:var(--muted)}
 .cal-cell.hoje .cal-num{color:var(--br-d);font-weight:600}
-.cal-pill{display:flex;align-items:center;gap:4px;border-radius:20px;padding:2px 6px 2px 4px;margin-bottom:2px}
+.cal-day-total{font-size:10px;font-weight:700;color:var(--br-d)}
+.cal-items{display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1;min-height:0}
+.cal-pill{display:flex;align-items:center;gap:4px;border-radius:6px;padding:2px 6px;flex-shrink:0}
 .cal-pill.pg{background:#EAF3DE}
 .cal-pill.pd{background:#FAEEDA}
 .cal-pill.at{background:#FCEBEB}
 .cal-pill.tot{background:#E8E6E1}
-.cal-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .cal-dot.pg{background:#639922}
 .cal-dot.pd{background:#BA7517}
 .cal-dot.at{background:#E24B4A}
 .cal-plabel{font-size:9px;font-weight:500;color:#5F5E5A}
-.cal-pval{font-size:9px;font-weight:500;flex:1;text-align:right}
+.cal-item-desc{font-size:9px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-pval{font-size:9px;font-weight:600;flex-shrink:0;text-align:right}
 .cal-pval.pg{color:#27500A}
 .cal-pval.pd{color:#633806}
 .cal-pval.at{color:#791F1F}
@@ -3453,16 +3457,24 @@ function renderCalendarioContas(contas){
     if(isHoje) cls += ' hoje';
     if(temContas) cls += ' tem-contas';
 
-    // Pílulas por status + pílula cinza de total
-    let pills = '';
-    if(totAtrasado>0) pills += `<div class="cal-pill at"><span class="cal-dot at"></span><span class="cal-pval at">${brl(totAtrasado)}</span></div>`;
-    if(totPendente>0) pills += `<div class="cal-pill pd"><span class="cal-dot pd"></span><span class="cal-pval pd">${brl(totPendente)}</span></div>`;
-    if(totPago>0)     pills += `<div class="cal-pill pg"><span class="cal-dot pg"></span><span class="cal-pval pg">${brl(totPago)}</span></div>`;
-    if(totGeral>0)    pills += `<div class="cal-pill tot"><span class="cal-plabel">Total</span><span class="cal-pval tot">${brl(totGeral)}</span></div>`;
+    // Itens de vencimento, item a item, ordenados: atrasado > pendente > pago
+    const ordem = {at:0, pd:1, pg:2};
+    const itens = cs.map(c=>{
+      const st = c.status==='pago' ? 'pg' : (c.vencimento<td ? 'at' : 'pd');
+      return {st, desc: c.descricao||'', valor: R(c.valor||0)};
+    }).sort((a,b)=>ordem[a.st]-ordem[b.st]);
+
+    const itemsHtml = itens.map(it=>{
+      const descCurta = it.desc.length>10 ? it.desc.slice(0,10)+'…' : it.desc;
+      return `<div class="cal-pill ${it.st}"><span class="cal-dot ${it.st}"></span><span class="cal-item-desc">${descCurta}</span><span class="cal-pval ${it.st}">${brl(it.valor)}</span></div>`;
+    }).join('');
 
     html += `<div class="${cls}" onclick="openDiaPopup('${dataStr}')">
-      <div class="cal-num">${d}</div>
-      ${pills}
+      <div class="cal-day-hd">
+        <span class="cal-num">${d}</span>
+        ${totGeral>0?`<span class="cal-day-total">${brl(totGeral)}</span>`:''}
+      </div>
+      <div class="cal-items">${itemsHtml}</div>
     </div>`;
   }
 
