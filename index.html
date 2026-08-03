@@ -3465,7 +3465,7 @@ function renderCalendarioContas(contas){
     }).sort((a,b)=>ordem[a.st]-ordem[b.st]);
 
     const itemsHtml = itens.map(it=>{
-      const descCurta = it.desc.length>10 ? it.desc.slice(0,10)+'…' : it.desc;
+      const descCurta = it.desc.length>13 ? it.desc.slice(0,13)+'…' : it.desc;
       return `<div class="cal-pill ${it.st}"><span class="cal-dot ${it.st}"></span><span class="cal-item-desc">${descCurta}</span><span class="cal-pval ${it.st}">${brl(it.valor)}</span></div>`;
     }).join('');
 
