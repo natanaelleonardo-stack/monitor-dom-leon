@@ -3719,12 +3719,17 @@ saveSaidaUnificada=async()=>{
         if(recId) conta.recorrente_id = recId;
         await addDoc(collection(db,'contas'),conta);
       }
+    } else {
+      // À vista: a saída já foi paga na hora — lançar a conta já como paga, pra aparecer no calendário
+      const contaPaga = {descricao:descricao||tipo,categoria:grupo+'|'+tagcls,valor,compra:dataI,vencimento:dataI,modalidade:sModSelecionada,status:'pago',dataPagamento:dataI,obs:document.getElementById('s-obs').value.trim()||'',gerou_saida:true};
+      if(recId) contaPaga.recorrente_id = recId;
+      await addDoc(collection(db,'contas'),contaPaga);
     }
   }
 
   document.getElementById('btn-saida').disabled=false;
   clearSaidaUnificada();
-  toast(meses>1?meses+' meses lançados com sucesso!':sModSelecionada!=='avista'?'Saída e conta a pagar registradas!':'Saída registrada!');
+  toast(meses>1?meses+' meses lançados com sucesso!':sModSelecionada!=='avista'?'Saída e conta a pagar registradas!':'Saída registrada e marcada como paga no calendário!');
 };
 
 function calcVencAuto(data,mod){
