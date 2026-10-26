@@ -778,6 +778,7 @@ select option{font-weight:400;color:#1A1210}
     <button class="nb on" onclick="nav('saude',this)"><i class="ti ti-activity"></i> Saúde</button>
     <button class="nb" onclick="nav('entradas',this)"><i class="ti ti-arrow-bar-to-down"></i> Entradas</button>
     <button class="nb" onclick="nav('saidas',this)"><i class="ti ti-arrow-bar-up"></i> Saídas</button>
+    <button class="nb" onclick="nav('gestao',this)"><i class="ti ti-list-check"></i> Gest&atilde;o</button>
     <button class="nb" onclick="nav('meta',this)"><i class="ti ti-target"></i> Meta</button>
     <button class="nb" onclick="nav('contas',this)"><i class="ti ti-calendar-due"></i> Contas a pagar</button>
     <button class="nb" onclick="nav('lancar',this)"><i class="ti ti-plus"></i> Lançar</button>
@@ -856,6 +857,70 @@ select option{font-weight:400;color:#1A1210}
       <thead><tr><th>Data</th><th>Tipo</th><th>Grupo</th><th>Valor</th><th>Descrição</th><th></th></tr></thead>
       <tbody id="tb-saidas-det"></tbody>
     </table></div>
+  </div>
+
+  <!-- GESTÃO DE SAÍDAS -->
+  <div class="pnl" id="pnl-gestao">
+    <!-- KPIs -->
+    <div class="kpi-row" id="gest-kpis" style="margin-bottom:16px"></div>
+    <!-- Filtros -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:12px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;flex:1;min-width:160px;max-width:240px">
+        <i class="ti ti-search" style="font-size:14px;color:var(--muted)"></i>
+        <input id="gest-busca" type="text" placeholder="Buscar tipo, descri&#231;&#227;o..." style="border:none;background:transparent;width:100%;font-size:12px;color:var(--text);outline:none;font-family:inherit" oninput="renderGestao()">
+      </div>
+      <select id="gest-status" onchange="renderGestao()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;min-width:130px;font-family:inherit">
+        <option value="">Todos os status</option>
+        <option value="atrasado">Em atraso</option>
+        <option value="pendente">Pendente</option>
+        <option value="pago">Pago</option>
+      </select>
+      <select id="gest-grupo" onchange="renderGestao()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;min-width:150px;font-family:inherit">
+        <option value="">Todos os grupos</option>
+      </select>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+        <i class="ti ti-calendar" style="font-size:14px"></i>
+        <input id="gest-de" type="month" onchange="renderGestao()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit">
+        <span>&#8594;</span>
+        <input id="gest-ate" type="month" onchange="renderGestao()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit">
+      </div>
+      <button onclick="limparFiltrosGest()" style="margin-left:auto;font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class="ti ti-x" style="font-size:12px"></i> Limpar</button>
+    </div>
+    <!-- Barra de ações em massa (aparece só quando há seleção) -->
+    <div id="gest-massa-bar" style="display:none;padding:10px 16px;background:var(--warn-l);border:1px solid var(--border);border-top:none;border-bottom:1px solid var(--border);align-items:center;gap:10px;flex-wrap:wrap">
+      <i class="ti ti-checkbox" style="font-size:15px;color:var(--warn)"></i>
+      <span id="gest-sel-count" style="font-size:12px;font-weight:600;color:var(--warn)">0 itens selecionados</span>
+      <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
+        <button onclick="gestMassaPagar()" style="font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid #E8C87A;background:var(--surface);color:#7A5608;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class="ti ti-check" style="font-size:12px"></i> Marcar como pago</button>
+        <button onclick="gestMassaDeletar()" style="font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid #F5C1C1;background:var(--surface);color:var(--err);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class="ti ti-trash" style="font-size:12px"></i> Excluir selecionados</button>
+        <button onclick="gestLimparSel()" style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-family:inherit"><i class="ti ti-x" style="font-size:12px"></i></button>
+      </div>
+    </div>
+    <!-- Tabela -->
+    <div class="tbl-wrap" style="border-radius:0 0 12px 12px;margin-bottom:0">
+      <table style="table-layout:fixed">
+        <thead>
+          <tr>
+            <th style="width:36px;padding:10px 0 10px 12px;text-align:center">
+              <input type="checkbox" id="gest-chk-all" onchange="gestToggleAll(this.checked)" style="cursor:pointer;accent-color:var(--br)">
+            </th>
+            <th style="width:80px">DATA</th>
+            <th>TIPO / DESCRI&#199;&#195;O</th>
+            <th style="width:120px">GRUPO</th>
+            <th style="width:95px">VENCIMENTO</th>
+            <th style="width:100px;text-align:right">VALOR</th>
+            <th style="width:85px">STATUS</th>
+            <th style="width:75px;text-align:center">A&#199;&#213;ES</th>
+          </tr>
+        </thead>
+        <tbody id="gest-tbody"></tbody>
+      </table>
+    </div>
+    <!-- Rodapé / paginação -->
+    <div id="gest-footer" style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);flex-wrap:wrap;gap:8px">
+      <span id="gest-pag-info"></span>
+      <div id="gest-pag-btns" style="display:flex;gap:4px"></div>
+    </div>
   </div>
 
   <!-- META -->
@@ -3634,7 +3699,269 @@ function renderContas(){
   renderFatura('amex','fatura-amex',18);
 }
 
-function renderAll(){renderSaude();renderEntradas();renderSaidas();renderMeta();renderContas();}
+function renderAll(){renderSaude();renderEntradas();renderSaidas();renderGestao();renderMeta();renderContas();}
+
+/* =========================================================
+   GESTÃO — lista unificada de saídas (saidas + contas)
+   ========================================================= */
+let gestaoPage = 0;
+const GEST_PER_PAGE = 20;
+let gestaoSelecionados = new Set(); // "src:id" ex: "saida:abc123" | "conta:xyz"
+
+function gestaoGetStatus(item){
+  if(item._source === 'saida') return 'saida'; // sa&iacute;das &agrave; vista n&atilde;o t&ecirc;m status
+  if((item.status||'') === 'pago') return 'pago';
+  const hoje = todayLocal();
+  if(item.vencimento && item.vencimento < hoje) return 'atrasado';
+  return 'pendente';
+}
+
+function gestaoGetFiltrados(){
+  const busca = (document.getElementById('gest-busca')||{value:''}).value.trim().toLowerCase();
+  const stFil = (document.getElementById('gest-status')||{value:''}).value;
+  const grFil = (document.getElementById('gest-grupo')||{value:''}).value;
+  const deFil = (document.getElementById('gest-de')||{value:''}).value;   // YYYY-MM
+  const ateFil= (document.getElementById('gest-ate')||{value:''}).value;
+
+  // Combina as duas cole&ccedil;&otilde;es
+  const saidas = (ST.saidas||[]).map(s=>({...s, _source:'saida'}));
+  const contas = (ST.contas||[]).map(c=>({...c, _source:'conta'}));
+  let todos = [...saidas, ...contas];
+
+  // Popula select de grupos
+  const grpEl = document.getElementById('gest-grupo');
+  if(grpEl){
+    const grupos = [...new Set(todos.map(i=>i.grupo||i.tipo||'').filter(Boolean))].sort();
+    const curVal = grpEl.value;
+    grpEl.innerHTML = '<option value="">Todos os grupos</option>' +
+      grupos.map(g=>'<option value="'+g+'"'+(g===curVal?' selected':'')+'>'+g+'</option>').join('');
+  }
+
+  return todos.filter(item=>{
+    // Busca texto
+    if(busca){
+      const haystack = ((item.tipo||'')+(item.descricao||'')+(item.grupo||'')).toLowerCase();
+      if(!haystack.includes(busca)) return false;
+    }
+    // Status
+    const st = gestaoGetStatus(item);
+    if(stFil){
+      if(stFil==='saida' && item._source!=='saida') return false;
+      if(stFil!=='saida' && st!==stFil) return false;
+    }
+    // Grupo
+    if(grFil && (item.grupo||item.tipo||'')!==grFil) return false;
+    // Faixa de m&ecirc;s
+    const dataMes = (item.data||item.vencimento||'').slice(0,7);
+    if(deFil && dataMes < deFil) return false;
+    if(ateFil && dataMes > ateFil) return false;
+    return true;
+  }).sort((a,b)=>{
+    const da = a.vencimento||a.data||'';
+    const db = b.vencimento||b.data||'';
+    return da < db ? 1 : da > db ? -1 : 0; // mais recente primeiro
+  });
+}
+
+function renderGestao(){
+  const tbody = document.getElementById('gest-tbody');
+  if(!tbody) return;
+
+  const todos = gestaoGetFiltrados();
+  const total = todos.length;
+  const pages = Math.max(1, Math.ceil(total/GEST_PER_PAGE));
+  if(gestaoPage >= pages) gestaoPage = pages-1;
+
+  const slice = todos.slice(gestaoPage*GEST_PER_PAGE, (gestaoPage+1)*GEST_PER_PAGE);
+
+  // KPIs
+  const hoje = todayLocal();
+  let totalVal=0, atrasadoVal=0, pendenteVal=0, pagoVal=0;
+  let totalCnt=0, atrasadoCnt=0, pendenteCnt=0, pagoCnt=0;
+  todos.forEach(item=>{
+    const v = item.valor||0;
+    const st = gestaoGetStatus(item);
+    totalVal+=v; totalCnt++;
+    if(st==='atrasado'){atrasadoVal+=v;atrasadoCnt++;}
+    else if(st==='pendente'||st==='saida'){pendenteVal+=v;pendenteCnt++;}
+    else if(st==='pago'){pagoVal+=v;pagoCnt++;}
+  });
+
+  const kpiEl = document.getElementById('gest-kpis');
+  if(kpiEl) kpiEl.innerHTML = [
+    {lbl:'Total',val:totalVal,cnt:totalCnt,icon:'ti-list',cor:'var(--text)'},
+    {lbl:'Em atraso',val:atrasadoVal,cnt:atrasadoCnt,icon:'ti-alert-circle',cor:'var(--err)'},
+    {lbl:'Pendentes',val:pendenteVal,cnt:pendenteCnt,icon:'ti-clock',cor:'var(--warn)'},
+    {lbl:'Pagos',val:pagoVal,cnt:pagoCnt,icon:'ti-circle-check',cor:'var(--ok)'},
+  ].map(k=>`<div class="kpi-card"><div class="kpi-icon" style="color:${k.cor}"><i class="ti ${k.icon}"></i></div><div class="kpi-val">${brl(k.val)}</div><div class="kpi-lbl">${k.lbl} <span style="opacity:.6;font-size:10px">(${k.cnt})</span></div></div>`).join('');
+
+  // Linhas da tabela
+  if(!slice.length){
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><i class="ti ti-inbox-off" style="font-size:24px;display:block;margin-bottom:8px"></i>Nenhum lan&ccedil;amento encontrado</td></tr>';
+  } else {
+    tbody.innerHTML = slice.map(item=>{
+      const key = item._source+':'+item.id;
+      const sel = gestaoSelecionados.has(key);
+      const st = gestaoGetStatus(item);
+      let rowBg = '';
+      if(st==='atrasado') rowBg='background:var(--err-l)';
+      else if(st==='pago') rowBg='background:var(--ok-l);opacity:.85';
+
+      const stBadge = st==='atrasado'
+        ? '<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--err-l);color:var(--err);font-weight:600">Em atraso</span>'
+        : st==='pago'
+        ? '<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--ok-l);color:var(--ok);font-weight:600">Pago</span>'
+        : st==='saida'
+        ? '<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#EDE9E0;color:var(--text);font-weight:600">Sa&iacute;da</span>'
+        : '<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:var(--warn-l);color:var(--warn);font-weight:600">Pendente</span>';
+
+      const dataFmt = (item.data||'').slice(0,10).split('-').reverse().join('/');
+      const vencFmt = item.vencimento ? item.vencimento.slice(0,10).split('-').reverse().join('/') : '—';
+      const desc = item.descricao ? '<div style="font-size:10px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.descricao+'</div>' : '';
+
+      const editBtn = item._source==='conta'
+        ? `<button onclick="openEdit('conta','${item.id}')" title="Editar" style="border:none;background:transparent;cursor:pointer;padding:3px 5px;border-radius:6px;color:var(--muted)" onmouseover="this.style.color='var(--br)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-edit" style="font-size:14px"></i></button>`
+        : `<button onclick="openEdit('saida','${item.id}')" title="Editar" style="border:none;background:transparent;cursor:pointer;padding:3px 5px;border-radius:6px;color:var(--muted)" onmouseover="this.style.color='var(--br)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-edit" style="font-size:14px"></i></button>`;
+
+      const delBtn = item._source==='conta'
+        ? `<button onclick="_delConta('${item.id}')" title="Excluir" style="border:none;background:transparent;cursor:pointer;padding:3px 5px;border-radius:6px;color:var(--muted)" onmouseover="this.style.color='var(--err)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-trash" style="font-size:14px"></i></button>`
+        : `<button onclick="_delSaida('${item.id}')" title="Excluir" style="border:none;background:transparent;cursor:pointer;padding:3px 5px;border-radius:6px;color:var(--muted)" onmouseover="this.style.color='var(--err)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-trash" style="font-size:14px"></i></button>`;
+
+      return `<tr style="${rowBg}">
+        <td style="padding:8px 0 8px 12px;text-align:center"><input type="checkbox" ${sel?'checked':''} onchange="gestToggleItem('${key}',this.checked)" style="cursor:pointer;accent-color:var(--br)"></td>
+        <td style="font-size:12px;white-space:nowrap">${dataFmt}</td>
+        <td style="font-size:12px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${item.tipo||'—'}</div>${desc}</td>
+        <td style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.grupo||'—'}</td>
+        <td style="font-size:12px;white-space:nowrap">${vencFmt}</td>
+        <td style="font-size:12px;text-align:right;font-weight:600;white-space:nowrap">${brl(item.valor||0)}</td>
+        <td>${stBadge}</td>
+        <td style="text-align:center;white-space:nowrap">${editBtn}${delBtn}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Atualiza barra de sele&ccedil;&atilde;o
+  gestAtualizarBarraMassa();
+
+  // Checkbox "selecionar todos"
+  const chkAll = document.getElementById('gest-chk-all');
+  if(chkAll){
+    const pageKeys = slice.map(i=>i._source+':'+i.id);
+    const allSel = pageKeys.length>0 && pageKeys.every(k=>gestaoSelecionados.has(k));
+    chkAll.checked = allSel;
+    chkAll.indeterminate = !allSel && pageKeys.some(k=>gestaoSelecionados.has(k));
+  }
+
+  // Paginação
+  const info = document.getElementById('gest-pag-info');
+  const btns = document.getElementById('gest-pag-btns');
+  if(info) info.textContent = total
+    ? 'Exibindo '+(gestaoPage*GEST_PER_PAGE+1)+'-'+Math.min((gestaoPage+1)*GEST_PER_PAGE,total)+' de '+total+' registros'
+    : '';
+  if(btns){
+    btns.innerHTML = '';
+    for(let p=0;p<pages;p++){
+      const b = document.createElement('button');
+      b.textContent = p+1;
+      b.style.cssText='font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:'+(p===gestaoPage?'var(--br)':'var(--surface)')+';color:'+(p===gestaoPage?'#fff':'var(--text)')+';cursor:pointer;font-family:inherit';
+      b.onclick=(()=>{const pp=p;return()=>{gestaoPage=pp;renderGestao();};})();
+      btns.appendChild(b);
+      if(pages>7&&p===2&&gestaoPage>4){const e=document.createElement('span');e.textContent='...';e.style.padding='0 4px';btns.appendChild(e);}
+    }
+  }
+}
+
+function gestAtualizarBarraMassa(){
+  const bar = document.getElementById('gest-massa-bar');
+  const cnt = document.getElementById('gest-sel-count');
+  if(!bar) return;
+  const n = gestaoSelecionados.size;
+  if(n>0){
+    bar.style.display='flex';
+    if(cnt) cnt.textContent = n+' '+(n===1?'item selecionado':'itens selecionados');
+  } else {
+    bar.style.display='none';
+  }
+}
+
+function gestToggleAll(checked){
+  const todos = gestaoGetFiltrados();
+  const slice = todos.slice(gestaoPage*GEST_PER_PAGE, (gestaoPage+1)*GEST_PER_PAGE);
+  slice.forEach(item=>{
+    const key = item._source+':'+item.id;
+    if(checked) gestaoSelecionados.add(key);
+    else gestaoSelecionados.delete(key);
+  });
+  renderGestao();
+}
+
+function gestToggleItem(key, checked){
+  if(checked) gestaoSelecionados.add(key);
+  else gestaoSelecionados.delete(key);
+  gestAtualizarBarraMassa();
+  // atualiza chk-all sem re-render completo
+  const todos = gestaoGetFiltrados();
+  const slice = todos.slice(gestaoPage*GEST_PER_PAGE, (gestaoPage+1)*GEST_PER_PAGE);
+  const chkAll = document.getElementById('gest-chk-all');
+  if(chkAll){
+    const pageKeys = slice.map(i=>i._source+':'+i.id);
+    const allSel = pageKeys.length>0 && pageKeys.every(k=>gestaoSelecionados.has(k));
+    chkAll.checked = allSel;
+    chkAll.indeterminate = !allSel && pageKeys.some(k=>gestaoSelecionados.has(k));
+  }
+}
+
+function gestLimparSel(){
+  gestaoSelecionados.clear();
+  renderGestao();
+}
+
+async function gestMassaPagar(){
+  const contaKeys = [...gestaoSelecionados].filter(k=>k.startsWith('conta:'));
+  if(!contaKeys.length){
+    toast('Nenhuma conta selecionada (sa&iacute;das &agrave; vista n&atilde;o t&ecirc;m status)',true);
+    return;
+  }
+  const n = contaKeys.length;
+  if(!confirm('Marcar '+n+' conta'+(n>1?'s':'')+' como paga'+(n>1?'s':'')+' ?')) return;
+  try{
+    for(const k of contaKeys){
+      const id = k.split(':').slice(1).join(':');
+      await updateDoc(doc(db,'contas',id),{status:'pago'});
+    }
+    gestaoSelecionados.clear();
+    toast('Marcado como pago com sucesso');
+  } catch(e){
+    toast('Erro ao marcar: '+e.message,true);
+  }
+}
+
+async function gestMassaDeletar(){
+  const keys = [...gestaoSelecionados];
+  if(!keys.length) return;
+  const n = keys.length;
+  if(!confirm('Excluir '+n+' registro'+(n>1?'s':'')+' selecionado'+(n>1?'s':'')+' ? Esta a&#231;&#227;o n&#227;o pode ser desfeita.')) return;
+  try{
+    for(const k of keys){
+      const [src,...rest] = k.split(':');
+      const id = rest.join(':');
+      if(src==='conta') await deleteDoc(doc(db,'contas',id));
+      else if(src==='saida') await deleteDoc(doc(db,'saidas',id));
+    }
+    gestaoSelecionados.clear();
+    toast('Registros exclu&iacute;dos');
+  } catch(e){
+    toast('Erro ao excluir: '+e.message,true);
+  }
+}
+
+function limparFiltrosGest(){
+  const ids = ['gest-busca','gest-status','gest-grupo','gest-de','gest-ate'];
+  ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  gestaoPage=0;
+  gestaoSelecionados.clear();
+  renderGestao();
+}
 
 // ── NAV ──────────────────────────────────────────────────
 nav=(id,btn)=>{
