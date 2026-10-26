@@ -86,6 +86,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .sec-hd span{font-size:11px;font-weight:600;color:var(--br-d);text-transform:uppercase;letter-spacing:.05em}
 
 .tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:20px}
+.gest-chip-data{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.gest-chip-data.on{background:var(--br);color:#fff;border-color:var(--br)}
+.gest-chip-data:hover:not(.on){background:var(--surface);color:var(--text)}
+.gth-seta{font-size:10px;opacity:.45;margin-left:2px}
+thead th.gth-ativo .gth-seta{opacity:1;color:var(--br-l)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead tr{background:var(--br-d)}
 thead th{padding:10px 12px;text-align:left;font-weight:600;font-size:10px;color:var(--br-l);white-space:nowrap;letter-spacing:.04em}
@@ -863,11 +868,14 @@ select option{font-weight:400;color:#1A1210}
   <div class="pnl" id="pnl-gestao">
     <!-- KPIs -->
     <div class="kpi-row" id="gest-kpis" style="margin-bottom:16px"></div>
-    <!-- Filtros -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:12px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;flex:1;min-width:160px;max-width:240px">
-        <i class="ti ti-search" style="font-size:14px;color:var(--muted)"></i>
-        <input id="gest-busca" type="text" placeholder="Buscar tipo, descri&#231;&#227;o..." style="border:none;background:transparent;width:100%;font-size:12px;color:var(--text);outline:none;font-family:inherit" oninput="renderGestao()">
+    <!-- Filtros linha 1: busca + status + grupo + limpar -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:none">
+      <!-- Busca com autocomplete -->
+      <div style="position:relative;display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;flex:1;min-width:160px;max-width:260px">
+        <i class="ti ti-search" style="font-size:14px;color:var(--muted);flex-shrink:0"></i>
+        <input id="gest-busca" type="text" autocomplete="off" placeholder="Buscar tipo, descri&#231;&#227;o..." style="border:none;background:transparent;width:100%;font-size:12px;color:var(--text);outline:none;font-family:inherit"
+          oninput="gestBuscaInput(this)" onblur="setTimeout(()=>gestFechaSug(),180)" onfocus="gestBuscaInput(this)">
+        <div id="gest-sug" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.10);z-index:99;max-height:200px;overflow-y:auto"></div>
       </div>
       <select id="gest-status" onchange="renderGestao()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;min-width:130px;font-family:inherit">
         <option value="">Todos os status</option>
@@ -878,13 +886,25 @@ select option{font-weight:400;color:#1A1210}
       <select id="gest-grupo" onchange="renderGestao()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;min-width:150px;font-family:inherit">
         <option value="">Todos os grupos</option>
       </select>
-      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
-        <i class="ti ti-calendar" style="font-size:14px"></i>
-        <input id="gest-de" type="month" onchange="renderGestao()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit">
-        <span>&#8594;</span>
-        <input id="gest-ate" type="month" onchange="renderGestao()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit">
-      </div>
       <button onclick="limparFiltrosGest()" style="margin-left:auto;font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class="ti ti-x" style="font-size:12px"></i> Limpar</button>
+    </div>
+    <!-- Filtros linha 2: chips de data -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:1px solid var(--border);padding:8px 14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+      <i class="ti ti-calendar" style="font-size:14px;color:var(--muted);flex-shrink:0"></i>
+      <div id="gest-chips-data" style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="gest-chip-data on" onclick="gestChipData(this,'todos')">Todos</button>
+        <button class="gest-chip-data" onclick="gestChipData(this,'hoje')">Hoje</button>
+        <button class="gest-chip-data" onclick="gestChipData(this,'semana')">Esta semana</button>
+        <button class="gest-chip-data" onclick="gestChipData(this,'mes')">Este m&#234;s</button>
+        <button class="gest-chip-data" onclick="gestChipData(this,'mes-ant')">M&#234;s anterior</button>
+        <button class="gest-chip-data" onclick="gestChipData(this,'30d')">&#218;lt. 30 dias</button>
+        <button class="gest-chip-data" onclick="gestChipData(this,'custom')">Personalizado &#8853;</button>
+      </div>
+      <div id="gest-custom-data" style="display:none;align-items:center;gap:6px;margin-left:4px">
+        <input id="gest-de" type="date" onchange="renderGestao()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;height:28px">
+        <span style="font-size:12px;color:var(--muted)">&#8594;</span>
+        <input id="gest-ate" type="date" onchange="renderGestao()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;height:28px">
+      </div>
     </div>
     <!-- Barra de ações em massa (aparece só quando há seleção) -->
     <div id="gest-massa-bar" style="display:none;padding:10px 16px;background:var(--warn-l);border:1px solid var(--border);border-top:none;border-bottom:1px solid var(--border);align-items:center;gap:10px;flex-wrap:wrap">
@@ -904,12 +924,12 @@ select option{font-weight:400;color:#1A1210}
             <th style="width:36px;padding:10px 0 10px 12px;text-align:center">
               <input type="checkbox" id="gest-chk-all" onchange="gestToggleAll(this.checked)" style="cursor:pointer;accent-color:var(--br)">
             </th>
-            <th style="width:80px">DATA</th>
-            <th>TIPO / DESCRI&#199;&#195;O</th>
-            <th style="width:120px">GRUPO</th>
-            <th style="width:95px">VENCIMENTO</th>
-            <th style="width:100px;text-align:right">VALOR</th>
-            <th style="width:85px">STATUS</th>
+            <th style="width:80px;cursor:pointer;user-select:none" onclick="gestOrdenar('data')" id="gth-data">DATA <span class="gth-seta"></span></th>
+            <th style="cursor:pointer;user-select:none" onclick="gestOrdenar('tipo')" id="gth-tipo">TIPO / DESCRI&#199;&#195;O <span class="gth-seta"></span></th>
+            <th style="width:120px;cursor:pointer;user-select:none" onclick="gestOrdenar('grupo')" id="gth-grupo">GRUPO <span class="gth-seta"></span></th>
+            <th style="width:95px;cursor:pointer;user-select:none" onclick="gestOrdenar('vencimento')" id="gth-vencimento">VENCIMENTO <span class="gth-seta"></span></th>
+            <th style="width:100px;text-align:right;cursor:pointer;user-select:none" onclick="gestOrdenar('valor')" id="gth-valor">VALOR <span class="gth-seta"></span></th>
+            <th style="width:85px;cursor:pointer;user-select:none" onclick="gestOrdenar('status')" id="gth-status">STATUS <span class="gth-seta"></span></th>
             <th style="width:75px;text-align:center">A&#199;&#213;ES</th>
           </tr>
         </thead>
@@ -3707,9 +3727,123 @@ function renderAll(){renderSaude();renderEntradas();renderSaidas();renderGestao(
 let gestaoPage = 0;
 const GEST_PER_PAGE = 20;
 let gestaoSelecionados = new Set(); // "src:id" ex: "saida:abc123" | "conta:xyz"
+let gestaoOrdem = {col:'vencimento', asc:false};
+let gestaoChipAtivo = 'todos';
 
+// ── Chip de data ──────────────────────────────────────────
+function gestChipData(el, chip){
+  document.querySelectorAll('.gest-chip-data').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  gestaoChipAtivo = chip;
+  const custom = document.getElementById('gest-custom-data');
+  if(custom) custom.style.display = (chip==='custom') ? 'flex' : 'none';
+  gestaoPage = 0;
+  renderGestao();
+}
+
+function gestChipRange(){
+  const hoje = todayLocal();
+  const [ay,am,ad] = hoje.split('-').map(Number);
+  if(gestaoChipAtivo==='todos') return null;
+  if(gestaoChipAtivo==='hoje') return {de:hoje, ate:hoje};
+  if(gestaoChipAtivo==='semana'){
+    const d = new Date(ay,am-1,ad);
+    const dow = d.getDay();
+    const seg = new Date(ay,am-1,ad-(dow===0?6:dow-1));
+    const dom = new Date(seg.getFullYear(),seg.getMonth(),seg.getDate()+6);
+    const fmt=dd=>dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+    return {de:fmt(seg), ate:fmt(dom)};
+  }
+  if(gestaoChipAtivo==='mes'){
+    const de = ay+'-'+String(am).padStart(2,'0')+'-01';
+    const lastDay = new Date(ay,am,0).getDate();
+    const ate = ay+'-'+String(am).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
+    return {de, ate};
+  }
+  if(gestaoChipAtivo==='mes-ant'){
+    const mm = am===1?12:am-1;
+    const yy = am===1?ay-1:ay;
+    const de = yy+'-'+String(mm).padStart(2,'0')+'-01';
+    const lastDay = new Date(yy,mm,0).getDate();
+    const ate = yy+'-'+String(mm).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
+    return {de, ate};
+  }
+  if(gestaoChipAtivo==='30d'){
+    const d30 = new Date(ay,am-1,ad-29);
+    const de = d30.getFullYear()+'-'+String(d30.getMonth()+1).padStart(2,'0')+'-'+String(d30.getDate()).padStart(2,'0');
+    return {de, ate:hoje};
+  }
+  if(gestaoChipAtivo==='custom'){
+    const de  = (document.getElementById('gest-de')||{value:''}).value;
+    const ate = (document.getElementById('gest-ate')||{value:''}).value;
+    if(!de && !ate) return null;
+    return {de:de||'0000-01-01', ate:ate||'9999-12-31'};
+  }
+  return null;
+}
+
+// ── Ordena&ccedil;&atilde;o por coluna ──────────────────────────────────
+function gestOrdenar(col){
+  if(gestaoOrdem.col===col){
+    gestaoOrdem.asc = !gestaoOrdem.asc;
+  } else {
+    gestaoOrdem = {col, asc: col==='valor' ? false : true};
+  }
+  gestaoPage=0;
+  renderGestao();
+}
+
+function gestAtualizarSetasOrdem(){
+  ['data','tipo','grupo','vencimento','valor','status'].forEach(c=>{
+    const th = document.getElementById('gth-'+c);
+    if(!th) return;
+    const seta = th.querySelector('.gth-seta');
+    if(gestaoOrdem.col===c){
+      th.classList.add('gth-ativo');
+      if(seta) seta.textContent = gestaoOrdem.asc ? ' \u2191' : ' \u2193';
+    } else {
+      th.classList.remove('gth-ativo');
+      if(seta) seta.textContent = '';
+    }
+  });
+}
+
+// ── Autocomplete busca ────────────────────────────────────
+function gestBuscaInput(inp){
+  const v = inp.value.trim();
+  renderGestao();
+  if(v.length < 2){ gestFechaSug(); return; }
+  const todos = [...(ST.saidas||[]), ...(ST.contas||[])];
+  const termos = [...new Set(todos.flatMap(i=>[i.tipo||'',i.descricao||'']).filter(Boolean))];
+  const q = v.toLowerCase();
+  const matches = termos.filter(t=>t.toLowerCase().includes(q) && t.toLowerCase()!==q).slice(0,8);
+  const sug = document.getElementById('gest-sug');
+  if(!sug) return;
+  if(!matches.length){ gestFechaSug(); return; }
+  sug.style.display='block';
+  sug.innerHTML = matches.map(m=>{
+    const safe = m.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    const hl = safe.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<strong>$1</strong>');
+    const val = m.replace(/'/g,"\\'");
+    return '<div style="padding:7px 12px;font-size:12px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border)" onmousedown="gestSugClick(\''+val+'\')">'+hl+'</div>';
+  }).join('');
+}
+
+function gestSugClick(val){
+  const inp = document.getElementById('gest-busca');
+  if(inp){ inp.value=val; }
+  gestFechaSug();
+  renderGestao();
+}
+
+function gestFechaSug(){
+  const sug = document.getElementById('gest-sug');
+  if(sug) sug.style.display='none';
+}
+
+// ── Core: filtragem + ordena&ccedil;&atilde;o ─────────────────────────────
 function gestaoGetStatus(item){
-  if(item._source === 'saida') return 'saida'; // sa&iacute;das &agrave; vista n&atilde;o t&ecirc;m status
+  if(item._source === 'saida') return 'saida';
   if((item.status||'') === 'pago') return 'pago';
   const hoje = todayLocal();
   if(item.vencimento && item.vencimento < hoje) return 'atrasado';
@@ -3720,15 +3854,12 @@ function gestaoGetFiltrados(){
   const busca = (document.getElementById('gest-busca')||{value:''}).value.trim().toLowerCase();
   const stFil = (document.getElementById('gest-status')||{value:''}).value;
   const grFil = (document.getElementById('gest-grupo')||{value:''}).value;
-  const deFil = (document.getElementById('gest-de')||{value:''}).value;   // YYYY-MM
-  const ateFil= (document.getElementById('gest-ate')||{value:''}).value;
+  const range = gestChipRange();
 
-  // Combina as duas cole&ccedil;&otilde;es
   const saidas = (ST.saidas||[]).map(s=>({...s, _source:'saida'}));
   const contas = (ST.contas||[]).map(c=>({...c, _source:'conta'}));
   let todos = [...saidas, ...contas];
 
-  // Popula select de grupos
   const grpEl = document.getElementById('gest-grupo');
   if(grpEl){
     const grupos = [...new Set(todos.map(i=>i.grupo||i.tipo||'').filter(Boolean))].sort();
@@ -3737,30 +3868,40 @@ function gestaoGetFiltrados(){
       grupos.map(g=>'<option value="'+g+'"'+(g===curVal?' selected':'')+'>'+g+'</option>').join('');
   }
 
-  return todos.filter(item=>{
-    // Busca texto
+  const filtrados = todos.filter(item=>{
     if(busca){
       const haystack = ((item.tipo||'')+(item.descricao||'')+(item.grupo||'')).toLowerCase();
       if(!haystack.includes(busca)) return false;
     }
-    // Status
     const st = gestaoGetStatus(item);
     if(stFil){
       if(stFil==='saida' && item._source!=='saida') return false;
       if(stFil!=='saida' && st!==stFil) return false;
     }
-    // Grupo
     if(grFil && (item.grupo||item.tipo||'')!==grFil) return false;
-    // Faixa de m&ecirc;s
-    const dataMes = (item.data||item.vencimento||'').slice(0,7);
-    if(deFil && dataMes < deFil) return false;
-    if(ateFil && dataMes > ateFil) return false;
+    if(range){
+      const dataRef = (item.data||item.vencimento||'').slice(0,10);
+      if(range.de && dataRef < range.de) return false;
+      if(range.ate && dataRef > range.ate) return false;
+    }
     return true;
-  }).sort((a,b)=>{
-    const da = a.vencimento||a.data||'';
-    const db = b.vencimento||b.data||'';
-    return da < db ? 1 : da > db ? -1 : 0; // mais recente primeiro
   });
+
+  const {col, asc} = gestaoOrdem;
+  filtrados.sort((a,b)=>{
+    let va='', vb='';
+    if(col==='data'){       va=a.data||'';                   vb=b.data||''; }
+    else if(col==='tipo'){  va=(a.tipo||'').toLowerCase();   vb=(b.tipo||'').toLowerCase(); }
+    else if(col==='grupo'){ va=(a.grupo||a.tipo||'').toLowerCase(); vb=(b.grupo||b.tipo||'').toLowerCase(); }
+    else if(col==='vencimento'){ va=a.vencimento||a.data||''; vb=b.vencimento||b.data||''; }
+    else if(col==='valor'){ return asc ? (a.valor||0)-(b.valor||0) : (b.valor||0)-(a.valor||0); }
+    else if(col==='status'){ va=gestaoGetStatus(a); vb=gestaoGetStatus(b); }
+    if(va<vb) return asc?-1:1;
+    if(va>vb) return asc?1:-1;
+    return 0;
+  });
+
+  return filtrados;
 }
 
 function renderGestao(){
@@ -3839,6 +3980,9 @@ function renderGestao(){
       </tr>`;
     }).join('');
   }
+
+  // Setas de ordena&ccedil;&atilde;o
+  gestAtualizarSetasOrdem();
 
   // Atualiza barra de sele&ccedil;&atilde;o
   gestAtualizarBarraMassa();
@@ -3958,6 +4102,14 @@ async function gestMassaDeletar(){
 function limparFiltrosGest(){
   const ids = ['gest-busca','gest-status','gest-grupo','gest-de','gest-ate'];
   ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  // Reset chip de data
+  gestaoChipAtivo = 'todos';
+  document.querySelectorAll('.gest-chip-data').forEach(b=>b.classList.remove('on'));
+  const chipTodos = document.querySelector('.gest-chip-data[onclick*="todos"]');
+  if(chipTodos) chipTodos.classList.add('on');
+  const custom = document.getElementById('gest-custom-data');
+  if(custom) custom.style.display='none';
+  gestFechaSug();
   gestaoPage=0;
   gestaoSelecionados.clear();
   renderGestao();
