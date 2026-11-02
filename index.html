@@ -501,6 +501,8 @@ select option{font-weight:400;color:#1A1210}
 .dias-ativo{display:flex;align-items:center;gap:6px;color:var(--br-l);font-size:12px;background:rgba(255,255,255,.08);border:1px solid rgba(196,168,130,.35);padding:5px 10px;border-radius:999px;white-space:nowrap}
 .dias-ativo i{font-size:15px}.dias-ativo b{color:#fff;font-weight:600}
 @media(max-width:640px){.dias-ativo .dias-tx{display:none}.dias-ativo{padding:4px 8px}}
+.tb-left{min-width:0}.dias-ativo{flex:none}
+@media(max-width:900px){.dias-ativo .dias-tx{display:none}.tb-date{display:none}}
 </style>
 </head>
 <body>
@@ -777,12 +779,12 @@ select option{font-weight:400;color:#1A1210}
       <div class="tb-brand">Padaria Dom Leon</div>
       <div class="tb-sub">Monitor Operacional</div>
     </div>
+    <div class="dias-ativo" id="dias-ativo" title=""><i class="ti ti-calendar"></i><b id="dias-ativo-n">—</b><span class="dias-tx"> dias</span></div>
   </div>
   <div style="position:absolute;left:50%;transform:translateX(-50%)">
     <button class="raio-btn" onclick="openPopup()" aria-label="Lançamento rápido"><i class="ti ti-bolt"></i></button>
   </div>
   <div class="tb-right">
-    <div class="dias-ativo" id="dias-ativo" title=""><i class="ti ti-calendar"></i><b id="dias-ativo-n">—</b><span class="dias-tx"> dias</span></div>
     <div class="sync-status">
       <div class="sync-dot loading" id="sync-dot"></div>
       <span id="sync-label">Conectando...</span>
