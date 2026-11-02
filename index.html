@@ -489,7 +489,8 @@ select option{font-weight:400;color:#1A1210}
 .gf-seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .gf-seg button{border:0;background:var(--surface);padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--br-d)}
 .gf-seg button.on{background:var(--br-d);color:#fff}
-.gf-bar select,.gf-bar input[type=month]{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:inherit;color:var(--br-d);background:var(--surface)}
+.gf-seg.sm button{padding:4px 10px;font-size:11px}
+.gf-bar select,.gf-bar input[type=month],.gf-bar input[type=date]{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:inherit;color:var(--br-d);background:var(--surface)}
 .gf-rng{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .gf-chk{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
 .gf-sub{font-size:12px;color:var(--muted);margin:-8px 0 12px}
@@ -966,6 +967,8 @@ select option{font-weight:400;color:#1A1210}
     <div class="gf-bar">
       <div class="gf-f"><label>Período</label>
         <div class="gf-pills" id="gf-pills">
+          <button class="gf-pill" data-v="7d" onclick="gfSetPer('7d',this)">Últimos 7 dias</button>
+          <button class="gf-pill" data-v="30d" onclick="gfSetPer('30d',this)">Últimos 30 dias</button>
           <button class="gf-pill" data-v="1" onclick="gfSetPer('1',this)">Mês atual</button>
           <button class="gf-pill" data-v="3" onclick="gfSetPer('3',this)">3 meses</button>
           <button class="gf-pill on" data-v="5" onclick="gfSetPer('5',this)">5 meses</button>
@@ -975,7 +978,11 @@ select option{font-weight:400;color:#1A1210}
         </div>
       </div>
       <div class="gf-f"><label>Personalizado</label>
-        <div class="gf-rng"><input type="month" id="gf-de" onchange="gfCustom()"> até <input type="month" id="gf-ate" onchange="gfCustom()"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="gf-seg sm" id="gf-modo"><button class="on" onclick="gfSetModo('m',this)">Mês</button><button onclick="gfSetModo('d',this)">Dia</button></div>
+          <div class="gf-rng" id="gf-rng-m"><input type="month" id="gf-de" onchange="gfCustom()"> até <input type="month" id="gf-ate" onchange="gfCustom()"></div>
+          <div class="gf-rng" id="gf-rng-d" style="display:none"><input type="date" id="gf-dd" onchange="gfCustom()"> até <input type="date" id="gf-da" onchange="gfCustom()"></div>
+        </div>
       </div>
       <div class="gf-f"><label>Comparar com</label>
         <select id="gf-cmp" onchange="gfSetCmp(this.value)">
@@ -986,9 +993,9 @@ select option{font-weight:400;color:#1A1210}
       </div>
       <div class="gf-f"><label>Agrupar por</label>
         <div class="gf-seg" id="gf-grp">
-          <button onclick="gfSetGrp('dia',this)">Dia</button>
-          <button onclick="gfSetGrp('sem',this)">Semana</button>
-          <button class="on" onclick="gfSetGrp('mes',this)">Mês</button>
+          <button id="gf-g-dia" onclick="gfSetGrp('dia',this)">Dia</button>
+          <button id="gf-g-sem" onclick="gfSetGrp('sem',this)">Semana</button>
+          <button id="gf-g-mes" class="on" onclick="gfSetGrp('mes',this)">Mês</button>
         </div>
       </div>
     </div>
@@ -3612,25 +3619,35 @@ function renderContas(){
 
 
 // ── ABA GRÁFICOS ─────────────────────────────────────────
-const GF={per:'5',cmp:'ano',grp:'mes',meta:true};
+const GF={per:'5',modo:'m',cmp:'ano',grp:'mes',meta:true};
+let gfGrpAtual='mes';
 const MES_ABR=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-function gfYM(y,m){return y+'-'+String(m).padStart(2,'0');}
-function gfAddM(ym,n){const a=ym.split('-').map(Number);const t=a[0]*12+(a[1]-1)+n;return gfYM(Math.floor(t/12),t%12+1);}
+function gfPad(n){return String(n).padStart(2,'0');}
+function gfYM(y,m){return y+'-'+gfPad(m);}
+function gfAddM(ym,n){const a=ym.split('-').map(Number);const x=a[0]*12+(a[1]-1)+n;return gfYM(Math.floor(x/12),x%12+1);}
+function gfFmt(d){return d.getFullYear()+'-'+gfPad(d.getMonth()+1)+'-'+gfPad(d.getDate());}
+function gfParse(s){const p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function gfAddD(s,n){const d=gfParse(s);d.setDate(d.getDate()+n);return gfFmt(d);}
+function gfShiftY(s,n){const p=s.split('-').map(Number);return gfFmt(new Date(p[0]+n,p[1]-1,p[2]));}
+function gfMonthEnd(ym){const p=ym.split('-').map(Number);return gfFmt(new Date(p[0],p[1],0));}
+function gfDaysBetween(a,b){const r=[];let x=a;while(x<=b&&r.length<4000){r.push(x);x=gfAddD(x,1);}return r;}
+function gfBR(s){const p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function gfRange(){
-  const cur=todayLocal().slice(0,7);let a,b;
-  const de=document.getElementById('gf-de').value,ate=document.getElementById('gf-ate').value;
-  if(GF.per==='custom'&&de&&ate){a=de;b=ate;}
+  const hoje=todayLocal(),cur=hoje.slice(0,7);
+  const g=id=>document.getElementById(id).value;
+  if(GF.per==='7d')return{ds:gfAddD(hoje,-6),de:hoje,kind:'d'};
+  if(GF.per==='30d')return{ds:gfAddD(hoje,-29),de:hoje,kind:'d'};
+  if(GF.per==='custom'&&GF.modo==='d'&&g('gf-dd')&&g('gf-da')){
+    let a=g('gf-dd'),b=g('gf-da');if(a>b){const x=a;a=b;b=x;}
+    return{ds:a,de:b,kind:'d'};
+  }
+  let a,b;
+  if(GF.per==='custom'&&GF.modo==='m'&&g('gf-de')&&g('gf-ate')){a=g('gf-de');b=g('gf-ate');}
   else if(GF.per==='99'){a=cur.slice(0,4)+'-01';b=cur;}
   else if(GF.per==='0'){const ds=ST.entradas.map(e=>e.data).sort();a=ds.length?ds[0].slice(0,7):cur;b=cur;}
   else{const n=parseInt(GF.per)||5;a=gfAddM(cur,-(n-1));b=cur;}
   if(a>b){const x=a;a=b;b=x;}
-  return{a:a,b:b};
-}
-function gfDays(a,b){
-  const r=[];const p=a.split('-').map(Number),q=b.split('-').map(Number);
-  const end=new Date(q[0],q[1],0);
-  for(let d=new Date(p[0],p[1]-1,1);d<=end;d.setDate(d.getDate()+1)){r.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));}
-  return r;
+  return{ds:a+'-01',de:gfMonthEnd(b),kind:'m',a:a,b:b};
 }
 function gfBuckets(days,grp,mapE){
   const keys=[],agg={};
@@ -3659,40 +3676,56 @@ function gfCustom(){
   document.querySelectorAll('#gf-pills .gf-pill').forEach(b=>b.classList.remove('on'));
   renderGraficos();
 }
-function gfSetCmp(v){GF.cmp=v;renderGraficos();}
-function gfSetGrp(v,btn){
-  GF.grp=v;
-  document.querySelectorAll('#gf-grp button').forEach(b=>b.classList.remove('on'));
+function gfSetModo(m,btn){
+  GF.modo=m;
+  document.querySelectorAll('#gf-modo button').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  document.getElementById('gf-rng-m').style.display=m==='m'?'flex':'none';
+  document.getElementById('gf-rng-d').style.display=m==='d'?'flex':'none';
   renderGraficos();
 }
+function gfSetCmp(v){GF.cmp=v;renderGraficos();}
+function gfSetGrp(v,btn){GF.grp=v;renderGraficos();}
 function gfToggleMeta(v){GF.meta=v;renderGraficos();}
 
 function renderGraficos(){
   const pnl=document.getElementById('pnl-graficos');
   if(!pnl||!pnl.classList.contains('on'))return;
+  const hoje=todayLocal();
   const rg=gfRange();
-  const deEl=document.getElementById('gf-de'),ateEl=document.getElementById('gf-ate');
-  if(GF.per!=='custom'){deEl.value=rg.a;ateEl.value=rg.b;}
+  if(GF.per!=='custom'){
+    document.getElementById('gf-de').value=rg.ds.slice(0,7);
+    document.getElementById('gf-ate').value=rg.de.slice(0,7);
+    document.getElementById('gf-dd').value=rg.ds;
+    document.getElementById('gf-da').value=rg.de;
+  }
   const mapE={};
   ST.entradas.forEach(e=>{mapE[e.data]=totalE(e.data);});
-  let days=gfDays(rg.a,rg.b);
-  const hojeS=todayLocal();
-  const trunc=rg.b===hojeS.slice(0,7);
-  if(trunc)days=days.filter(d=>d<=hojeS);
+  const todos=gfDaysBetween(rg.ds,rg.de);
+  const lenSel=todos.length;
+  let days=todos;
+  const trunc=rg.de>hoje;
+  if(trunc)days=todos.filter(d=>d<=hoje);
+  // agrupamento automático: períodos de até 31 dias ficam por dia
+  const grp=(GF.grp==='mes'&&lenSel<=31)?'dia':GF.grp;
+  gfGrpAtual=grp;
+  ['dia','sem','mes'].forEach(g=>{document.getElementById('gf-g-'+g).classList.toggle('on',g===grp);});
   const nMeses=days.length?new Set(days.map(d=>d.slice(0,7))).size:1;
-  const cur=gfBuckets(days,GF.grp,mapE);
-  let comp=null,compTxt='';
-  if(GF.cmp!=='nao'){
-    let ca,cb;
-    if(GF.cmp==='ano'){ca=gfAddM(rg.a,-12);cb=gfAddM(rg.b,-12);compTxt='mesmo período de '+(parseInt(rg.a.slice(0,4))-1);}
-    else{ca=gfAddM(rg.a,-nMeses);cb=gfAddM(rg.a,-1);compTxt='período anterior';}
-    let cdays=gfDays(ca,cb);
-    if(trunc)cdays=cdays.slice(0,days.length);
-    comp=gfBuckets(cdays,GF.grp,mapE);
+  const cur=gfBuckets(days,grp,mapE);
+  let comp=null,cdays=null;
+  if(GF.cmp!=='nao'&&days.length){
+    if(GF.cmp==='ano'){cdays=days.map(d=>gfShiftY(d,-1));}
+    else if(rg.kind==='m'){
+      const nm=new Set(todos.map(d=>d.slice(0,7))).size;
+      cdays=gfDaysBetween(gfAddM(rg.a,-nm)+'-01',gfMonthEnd(gfAddM(rg.a,-1)));
+      if(trunc)cdays=cdays.slice(0,days.length);
+    }else{
+      cdays=gfDaysBetween(gfAddD(rg.ds,-days.length),gfAddD(rg.ds,-1));
+    }
+    comp=gfBuckets(cdays,grp,mapE);
   }
   const cmpNome=GF.cmp==='ano'?'Ano anterior':'Período anterior';
-  const labels=cur.map(b=>gfLabel(b.k,GF.grp));
+  const labels=cur.map(b=>gfLabel(b.k,grp));
   const dsCur=cur.map(b=>b.n?b.v:null);
   const dsCmp=comp?cur.map((b,i)=>comp[i]&&comp[i].n?comp[i].v:null):null;
   const dsMeta=cur.map(b=>b.meta>0?b.meta:null);
@@ -3704,27 +3737,33 @@ function renderGraficos(){
   let somaMeta=0,somaReal=0;cur.forEach(b=>{if(b.meta>0&&b.n){somaMeta+=b.meta;somaReal+=b.v;}});
   const ating=somaMeta>0?Math.round(somaReal/somaMeta*100):null;
   const temDias=cur.reduce((s,b)=>s+b.n,0);
+  const porDia=lenSel<=31;
+  const media=porDia?(temDias?totCur/temDias:0):totCur/nMeses;
   document.getElementById('gf-kpis').innerHTML=
     '<div class="kpi"><div class="kpi-label">Vendas no período</div><div class="kpi-val">'+brl(totCur)+'</div><div class="kpi-sub">'+fv(dif)+'</div></div>'+
-    '<div class="kpi"><div class="kpi-label">Média mensal</div><div class="kpi-val">'+brl(totCur/nMeses)+'</div><div class="kpi-sub">'+(temDias?'<span class="pill neu">'+temDias+' dias com venda</span>':'')+'</div></div>'+
-    '<div class="kpi"><div class="kpi-label">Melhor '+(GF.grp==='mes'?'mês':GF.grp==='sem'?'semana':'dia')+'</div><div class="kpi-val">'+(mxI>=0?brl(mxV):'—')+'</div><div class="kpi-sub">'+(mxI>=0?'<span class="pill neu">'+labels[mxI]+'</span>':'')+'</div></div>'+
+    '<div class="kpi"><div class="kpi-label">'+(porDia?'Média por dia aberto':'Média mensal')+'</div><div class="kpi-val">'+brl(media)+'</div><div class="kpi-sub">'+(temDias?'<span class="pill neu">'+temDias+' dias com venda</span>':'')+'</div></div>'+
+    '<div class="kpi"><div class="kpi-label">Melhor '+(grp==='mes'?'mês':grp==='sem'?'semana':'dia')+'</div><div class="kpi-val">'+(mxI>=0?brl(mxV):'—')+'</div><div class="kpi-sub">'+(mxI>=0?'<span class="pill neu">'+labels[mxI]+'</span>':'')+'</div></div>'+
     '<div class="kpi"><div class="kpi-label">Atingimento da meta</div><div class="kpi-val '+(ating===null?'':ating>=100?'ok':'err')+'">'+(ating===null?'—':ating+'%')+'</div><div class="kpi-sub"><span class="pill neu">'+(ating===null?'sem meta no período':'sobre o realizado')+'</span></div></div>';
   const nome=s=>MES_ABR[parseInt(s.split('-')[1])-1]+'/'+s.split('-')[0];
-  document.getElementById('gf-sub').textContent=nome(rg.a)+' a '+nome(rg.b)+(comp?' · comparado ao '+compTxt:'');
+  const txtPer=rg.kind==='m'?nome(rg.a)+' a '+nome(rg.b):gfBR(rg.ds)+' a '+gfBR(days.length?days[days.length-1]:rg.de);
+  const txtCmp=cdays&&cdays.length?' · comparado a '+(rg.kind==='m'&&GF.cmp==='ano'?'mesmo período de '+(parseInt(rg.ds.slice(0,4))-1):gfBR(cdays[0])+' a '+gfBR(cdays[cdays.length-1])):'';
+  document.getElementById('gf-sub').textContent=txtPer+txtCmp;
 
-  const dsets=[{label:'Período',data:dsCur,backgroundColor:'#4A3728',borderRadius:4,order:2}];
-  if(dsCmp)dsets.push({label:cmpNome,data:dsCmp,backgroundColor:'#C4A882',borderRadius:4,order:2});
-  if(GF.meta&&dsMeta.some(v=>v))dsets.push({type:'line',label:'Meta',data:dsMeta,borderColor:'#C0392B',borderDash:[6,4],borderWidth:2,pointRadius:GF.grp==='dia'?0:4,pointBackgroundColor:'#C0392B',spanGaps:true,order:1});
+  // período anterior sempre à esquerda do atual
+  const dsets=[];
+  if(dsCmp)dsets.push({label:cmpNome,data:dsCmp,backgroundColor:'#C4A882',borderRadius:4,order:2,labColor:'#4A3728'});
+  dsets.push({label:'Período',data:dsCur,backgroundColor:'#4A3728',borderRadius:4,order:2,labColor:'#fff'});
+  if(GF.meta&&dsMeta.some(v=>v))dsets.push({type:'line',label:'Meta',data:dsMeta,borderColor:'#C0392B',borderDash:[6,4],borderWidth:2,pointRadius:grp==='dia'?0:4,pointBackgroundColor:'#C0392B',spanGaps:true,order:1});
   const brl0=v=>'R$ '+Math.round(v).toLocaleString('pt-BR');
   const plug={id:'gfLabels',afterDatasetsDraw(c){
-    if(GF.grp==='dia')return;
+    if(gfGrpAtual==='dia')return;
     const ctx=c.ctx;ctx.save();ctx.font='600 11px Inter';
     c.data.datasets.forEach((d,i)=>{
       if(d.type==='line')return;
       c.getDatasetMeta(i).data.forEach((b,j)=>{
         const v=d.data[j];if(!v)return;
         const h=c.chartArea.bottom-b.y;if(h<62)return;
-        ctx.save();ctx.fillStyle=i===0?'#fff':'#4A3728';ctx.translate(b.x,b.y+8);ctx.rotate(-Math.PI/2);ctx.textAlign='right';ctx.fillText(brl0(v),0,4);ctx.restore();
+        ctx.save();ctx.fillStyle=d.labColor||'#fff';ctx.translate(b.x,b.y+8);ctx.rotate(-Math.PI/2);ctx.textAlign='right';ctx.fillText(brl0(v),0,4);ctx.restore();
       });
     });
     ctx.restore();
@@ -3740,7 +3779,7 @@ function renderGraficos(){
     type:'bar',data:{labels:labels,datasets:dsets},plugins:[plug],
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10}},
       plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+brl(c.parsed.y)}}},
-      scales:{y:{beginAtZero:true,grid:{color:'#F0E8DF'},ticks:{callback:v=>brl0(v)}},x:{grid:{display:false},ticks:{maxRotation:GF.grp==='dia'?90:0,autoSkip:true}}}}
+      scales:{y:{beginAtZero:true,grid:{color:'#F0E8DF'},ticks:{callback:v=>brl0(v)}},x:{grid:{display:false},ticks:{maxRotation:grp==='dia'?90:0,autoSkip:true}}}}
   });
 }
 
