@@ -1015,11 +1015,16 @@ select option{font-weight:400;color:#1A1210}
       <div class="gf-sub" id="gf-sub"></div>
       <div id="wrap-ch-gv1" style="position:relative;height:340px"><canvas id="ch-gv1"></canvas></div>
     </div>
+    <div class="chart-card" style="margin-top:16px">
+      <div class="chart-hd"><i class="ti ti-receipt"></i><span>Quantidade de vendas por período</span></div>
+      <div class="gf-sub" id="gf-sub2"></div>
+      <div id="wrap-ch-gv2" style="position:relative;height:340px"><canvas id="ch-gv2"></canvas></div>
+    </div>
     <div class="gf-grid">
-      <div class="gf-ph"><b>2 · Entradas × Saídas × Resultado</b>Em breve</div>
-      <div class="gf-ph"><b>3 · Custo de mercadoria % do faturamento</b>Em breve</div>
-      <div class="gf-ph"><b>4 · Mix de recebimento por mês</b>Em breve</div>
-      <div class="gf-ph"><b>5 · Vendas por dia da semana</b>Em breve</div>
+      <div class="gf-ph"><b>3 · Entradas × Saídas × Resultado</b>Em breve</div>
+      <div class="gf-ph"><b>4 · Custo de mercadoria % do faturamento</b>Em breve</div>
+      <div class="gf-ph"><b>5 · Mix de recebimento por mês</b>Em breve</div>
+      <div class="gf-ph"><b>6 · Vendas por dia da semana</b>Em breve</div>
     </div>
   </div>
 
@@ -3718,6 +3723,43 @@ function gfSetCmp(v){GF.cmp=v;renderGraficos();}
 function gfSetGrp(v,btn){GF.grp=v;renderGraficos();}
 function gfToggleMeta(v){GF.meta=v;renderGraficos();}
 
+function gfChartQtd(labels,curQ,compQ,cmpNome,grp,subTxt){
+  const sub=document.getElementById('gf-sub2');
+  if(sub)sub.textContent=subTxt;
+  const dsCur=curQ.map(b=>b.n?b.v:null);
+  const dsCmp=compQ?curQ.map((b,i)=>compQ[i]&&compQ[i].n?compQ[i].v:null):null;
+  destroyChart('ch-gv2');
+  const wrap=document.getElementById('wrap-ch-gv2');
+  if(!wrap)return;
+  if(!dsCur.some(v=>v>0)){
+    wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:200px;font-size:13px;color:#9E7A56;text-align:center;padding:0 16px">Sem dados de quantidade para o período selecionado</div>';
+    return;
+  }
+  const dsets=[];
+  if(dsCmp)dsets.push({label:cmpNome,data:dsCmp,backgroundColor:'#C4A882',borderRadius:4,order:2,labColor:'#4A3728'});
+  dsets.push({label:'Período',data:dsCur,backgroundColor:'#4A3728',borderRadius:4,order:2,labColor:'#fff'});
+  const fmt=v=>Math.round(v).toLocaleString('pt-BR');
+  const plug={id:'gfLabelsQ',afterDatasetsDraw(c){
+    if(grp==='dia')return;
+    const ctx=c.ctx;ctx.save();ctx.font='600 11px Inter';
+    c.data.datasets.forEach((d,i)=>{
+      c.getDatasetMeta(i).data.forEach((b,j)=>{
+        const v=d.data[j];if(!v)return;
+        if(c.chartArea.bottom-b.y<34)return;
+        ctx.save();ctx.fillStyle=d.labColor||'#fff';ctx.translate(b.x,b.y+8);ctx.rotate(-Math.PI/2);ctx.textAlign='right';ctx.fillText(fmt(v),0,4);ctx.restore();
+      });
+    });
+    ctx.restore();
+  }};
+  wrap.innerHTML='<canvas id="ch-gv2"></canvas>';
+  charts['ch-gv2']=new Chart(document.getElementById('ch-gv2'),{
+    type:'bar',data:{labels:labels,datasets:dsets},plugins:[plug],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.parsed.y)+' vendas'}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#F0E8DF'},ticks:{callback:v=>fmt(v)}},x:{grid:{display:false},ticks:{maxRotation:grp==='dia'?90:0,autoSkip:true}}}}
+  });
+}
+
 function renderGraficos(){
   const pnl=document.getElementById('pnl-graficos');
   if(!pnl||!pnl.classList.contains('on'))return;
@@ -3741,8 +3783,11 @@ function renderGraficos(){
   gfGrpAtual=grp;
   ['dia','sem','mes'].forEach(g=>{document.getElementById('gf-g-'+g).classList.toggle('on',g===grp);});
   const nMeses=days.length?new Set(days.map(d=>d.slice(0,7))).size:1;
+  const mapQ={};
+  ST.entradas.forEach(e=>{if(typeof e.qtd==='number')mapQ[e.data]=e.qtd;});
   const cur=gfBuckets(days,grp,mapE);
-  let comp=null,cdays=null;
+  const curQ=gfBuckets(days,grp,mapQ);
+  let comp=null,cdays=null,compQ=null;
   if(GF.cmp!=='nao'&&days.length){
     if(GF.cmp==='ano'){cdays=days.map(d=>gfShiftY(d,-1));}
     else if(rg.kind==='m'){
@@ -3753,6 +3798,7 @@ function renderGraficos(){
       cdays=gfDaysBetween(gfAddD(rg.ds,-days.length),gfAddD(rg.ds,-1));
     }
     comp=gfBuckets(cdays,grp,mapE);
+    compQ=gfBuckets(cdays,grp,mapQ);
   }
   const cmpNome=GF.cmp==='ano'?'Ano anterior':'Período anterior';
   const labels=cur.map(b=>gfLabel(b.k,grp));
@@ -3798,6 +3844,7 @@ function renderGraficos(){
     });
     ctx.restore();
   }};
+  gfChartQtd(labels,curQ,compQ,cmpNome,grp,txtPer+txtCmp);
   destroyChart('ch-gv1');
   const wrap=document.getElementById('wrap-ch-gv1');
   if(!dsCur.some(v=>v>0)){
