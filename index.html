@@ -1020,11 +1020,31 @@ select option{font-weight:400;color:#1A1210}
       <div class="gf-sub" id="gf-sub2"></div>
       <div id="wrap-ch-gv2" style="position:relative;height:340px"><canvas id="ch-gv2"></canvas></div>
     </div>
+    <div class="chart-card" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div class="chart-hd"><i class="ti ti-coin"></i><span>Ticket médio por período</span></div>
+        <label class="gf-chk"><input type="checkbox" id="gf-avg" checked onchange="GF.avg=this.checked;renderGraficos()"> Mostrar média do período</label>
+      </div>
+      <div class="gf-sub" id="gf-sub3"></div>
+      <div id="wrap-ch-gv3" style="position:relative;height:340px"><canvas id="ch-gv3"></canvas></div>
+    </div>
     <div class="gf-grid">
-      <div class="gf-ph"><b>3 · Entradas × Saídas × Resultado</b>Em breve</div>
-      <div class="gf-ph"><b>4 · Custo de mercadoria % do faturamento</b>Em breve</div>
-      <div class="gf-ph"><b>5 · Mix de recebimento por mês</b>Em breve</div>
-      <div class="gf-ph"><b>6 · Vendas por dia da semana</b>Em breve</div>
+      <div class="chart-card" style="margin:0">
+        <div class="chart-hd"><i class="ti ti-chart-line"></i><span>Ticket × Quantidade</span></div>
+        <div class="gf-sub" id="gf-sub4">Barras: quantidade de vendas · Linha: ticket médio</div>
+        <div id="wrap-ch-gv4" style="position:relative;height:320px"><canvas id="ch-gv4"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin:0">
+        <div class="chart-hd"><i class="ti ti-calendar-week"></i><span>Ticket por dia da semana</span></div>
+        <div class="gf-sub" id="gf-sub5">Ticket médio de segunda a domingo no período</div>
+        <div id="wrap-ch-gv5" style="position:relative;height:320px"><canvas id="ch-gv5"></canvas></div>
+      </div>
+    </div>
+    <div class="gf-grid">
+      <div class="gf-ph"><b>4 · Entradas × Saídas × Resultado</b>Em breve</div>
+      <div class="gf-ph"><b>5 · Custo de mercadoria % do faturamento</b>Em breve</div>
+      <div class="gf-ph"><b>6 · Mix de recebimento por mês</b>Em breve</div>
+      <div class="gf-ph"><b>7 · Vendas por dia da semana</b>Em breve</div>
     </div>
   </div>
 
@@ -3654,7 +3674,7 @@ function renderContas(){
 
 
 // ── ABA GRÁFICOS ─────────────────────────────────────────
-const GF={per:'5',modo:'m',cmp:'ano',grp:'mes',meta:true};
+const GF={per:'5',modo:'m',cmp:'ano',grp:'mes',meta:true,avg:true};
 let gfGrpAtual='mes';
 const MES_ABR=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function gfPad(n){return String(n).padStart(2,'0');}
@@ -3760,6 +3780,97 @@ function gfChartQtd(labels,curQ,compQ,cmpNome,grp,subTxt){
   });
 }
 
+// ── TICKET MÉDIO (vendas ÷ quantidade) ───────────────────
+// dias com quantidade não confiável ficam fora do cálculo
+function gfQtdExcl(d){return (d>='2024-12-17'&&d<='2024-12-31')||(d>='2025-01-11'&&d<='2025-01-15')||d==='2026-11-02';}
+function gfTkBuckets(days,grp,mapE,mapQ){
+  const keys=[],agg={};
+  days.forEach(d=>{
+    const k=grp==='dia'?d:grp==='sem'?wkey(d):d.slice(0,7);
+    if(!(k in agg)){agg[k]={v:0,q:0};keys.push(k);}
+    if(mapE[d]!==undefined&&mapQ[d]>0&&!gfQtdExcl(d)){agg[k].v+=mapE[d];agg[k].q+=mapQ[d];}
+  });
+  return keys.map(k=>({k:k,sv:agg[k].v,q:agg[k].q,v:agg[k].q?R(agg[k].v/agg[k].q):0}));
+}
+function gfTkTotal(bs){const v=bs.reduce((s,b)=>s+b.sv,0),q=bs.reduce((s,b)=>s+b.q,0);return{v:v,q:q,t:q?v/q:0};}
+const brl2=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function gfMsgVazio(wrap,txt){wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:200px;font-size:13px;color:#9E7A56;text-align:center;padding:0 16px">'+txt+'</div>';}
+function gfLabV(fmt,minH,skipDia,grp){
+  return {id:'gfLabT'+Math.random(),afterDatasetsDraw(c){
+    if(skipDia&&grp==='dia')return;
+    const ctx=c.ctx;ctx.save();ctx.font='600 11px Inter';
+    c.data.datasets.forEach((d,i)=>{
+      if(d.type==='line')return;
+      c.getDatasetMeta(i).data.forEach((b,j)=>{
+        const v=d.data[j];if(!v)return;
+        if(c.chartArea.bottom-b.y<minH)return;
+        ctx.save();ctx.fillStyle=d.labColor||'#fff';ctx.translate(b.x,b.y+8);ctx.rotate(-Math.PI/2);ctx.textAlign='right';ctx.fillText(fmt(v),0,4);ctx.restore();
+      });
+    });
+    ctx.restore();
+  }};
+}
+function gfChartTicket(labels,cur,comp,cmpNome,grp,subTxt){
+  const sub=document.getElementById('gf-sub3');if(sub)sub.textContent=subTxt;
+  destroyChart('ch-gv3');
+  const wrap=document.getElementById('wrap-ch-gv3');if(!wrap)return;
+  const dsCur=cur.map(b=>b.q?b.v:null);
+  if(!dsCur.some(v=>v>0)){gfMsgVazio(wrap,'Sem dados de ticket médio para o período selecionado');return;}
+  const dsCmp=comp?cur.map((b,i)=>comp[i]&&comp[i].q?comp[i].v:null):null;
+  const dsets=[];
+  if(dsCmp)dsets.push({label:cmpNome,data:dsCmp,backgroundColor:'#C4A882',borderRadius:4,order:2,labColor:'#4A3728'});
+  dsets.push({label:'Período',data:dsCur,backgroundColor:'#4A3728',borderRadius:4,order:2,labColor:'#fff'});
+  const tot=gfTkTotal(cur);
+  if(GF.avg&&tot.t>0)dsets.push({type:'line',label:'Média do período',data:cur.map(()=>tot.t),borderColor:'#C0392B',borderDash:[6,4],borderWidth:2,pointRadius:0,order:1});
+  wrap.innerHTML='<canvas id="ch-gv3"></canvas>';
+  charts['ch-gv3']=new Chart(document.getElementById('ch-gv3'),{
+    type:'bar',data:{labels:labels,datasets:dsets},plugins:[gfLabV(brl2,50,true,grp)],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+brl2(c.parsed.y)}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#F0E8DF'},ticks:{callback:v=>brl2(v)}},x:{grid:{display:false},ticks:{maxRotation:grp==='dia'?90:0,autoSkip:true}}}}
+  });
+}
+function gfChartTkQtd(labels,cur,grp){
+  destroyChart('ch-gv4');
+  const wrap=document.getElementById('wrap-ch-gv4');if(!wrap)return;
+  if(!cur.some(b=>b.q>0)){gfMsgVazio(wrap,'Sem dados para o período selecionado');return;}
+  const fq=v=>Math.round(v).toLocaleString('pt-BR');
+  wrap.innerHTML='<canvas id="ch-gv4"></canvas>';
+  charts['ch-gv4']=new Chart(document.getElementById('ch-gv4'),{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'Quantidade de vendas',data:cur.map(b=>b.q||null),backgroundColor:'#C4A882',borderRadius:4,yAxisID:'y',order:2},
+      {type:'line',label:'Ticket médio',data:cur.map(b=>b.q?b.v:null),borderColor:'#4A3728',backgroundColor:'#4A3728',borderWidth:2,pointRadius:grp==='dia'?0:4,tension:.25,spanGaps:true,yAxisID:'y1',order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.datasetIndex===0?fq(c.parsed.y)+' vendas':brl2(c.parsed.y))}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#F0E8DF'},ticks:{callback:v=>fq(v)}},
+        y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{callback:v=>brl2(v)}},
+        x:{grid:{display:false},ticks:{maxRotation:grp==='dia'?90:0,autoSkip:true}}}}
+  });
+}
+function gfChartTkSemana(days,cdays,mapE,mapQ,cmpNome){
+  destroyChart('ch-gv5');
+  const wrap=document.getElementById('wrap-ch-gv5');if(!wrap)return;
+  const NOM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],ORD=[1,2,3,4,5,6,0];
+  const calc=ds=>{const a=ORD.map(()=>({v:0,q:0}));
+    (ds||[]).forEach(d=>{if(mapE[d]===undefined||!(mapQ[d]>0)||gfQtdExcl(d))return;const i=ORD.indexOf(dweek(d));a[i].v+=mapE[d];a[i].q+=mapQ[d];});
+    return a.map(x=>x.q?R(x.v/x.q):null);};
+  const cur=calc(days),cmp=cdays?calc(cdays):null;
+  if(!cur.some(v=>v>0)){gfMsgVazio(wrap,'Sem dados para o período selecionado');return;}
+  const dsets=[];
+  if(cmp)dsets.push({label:cmpNome,data:cmp,backgroundColor:'#C4A882',borderRadius:4,labColor:'#4A3728'});
+  dsets.push({label:'Período',data:cur,backgroundColor:'#4A3728',borderRadius:4,labColor:'#fff'});
+  wrap.innerHTML='<canvas id="ch-gv5"></canvas>';
+  charts['ch-gv5']=new Chart(document.getElementById('ch-gv5'),{
+    type:'bar',data:{labels:NOM,datasets:dsets},plugins:[gfLabV(brl2,50,false,'')],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:10}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+brl2(c.parsed.y)}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#F0E8DF'},ticks:{callback:v=>brl2(v)}},x:{grid:{display:false}}}}
+  });
+}
+
 function renderGraficos(){
   const pnl=document.getElementById('pnl-graficos');
   if(!pnl||!pnl.classList.contains('on'))return;
@@ -3801,6 +3912,8 @@ function renderGraficos(){
     compQ=gfBuckets(cdays,grp,mapQ);
   }
   const cmpNome=GF.cmp==='ano'?'Ano anterior':'Período anterior';
+  const curT=gfTkBuckets(days,grp,mapE,mapQ);
+  const compT=cdays?gfTkBuckets(cdays,grp,mapE,mapQ):null;
   const labels=cur.map(b=>gfLabel(b.k,grp));
   const dsCur=cur.map(b=>b.n?b.v:null);
   const dsCmp=comp?cur.map((b,i)=>comp[i]&&comp[i].n?comp[i].v:null):null;
@@ -3820,6 +3933,16 @@ function renderGraficos(){
     '<div class="kpi"><div class="kpi-label">'+(porDia?'Média por dia aberto':'Média mensal')+'</div><div class="kpi-val">'+brl(media)+'</div><div class="kpi-sub">'+(temDias?'<span class="pill neu">'+temDias+' dias com venda</span>':'')+'</div></div>'+
     '<div class="kpi"><div class="kpi-label">Melhor '+(grp==='mes'?'mês':grp==='sem'?'semana':'dia')+'</div><div class="kpi-val">'+(mxI>=0?brl(mxV):'—')+'</div><div class="kpi-sub">'+(mxI>=0?'<span class="pill neu">'+labels[mxI]+'</span>':'')+'</div></div>'+
     '<div class="kpi"><div class="kpi-label">Atingimento da meta</div><div class="kpi-val '+(ating===null?'':ating>=100?'ok':'err')+'">'+(ating===null?'—':ating+'%')+'</div><div class="kpi-sub"><span class="pill neu">'+(ating===null?'sem meta no período':'sobre o realizado')+'</span></div></div>';
+  {
+    const tc=gfTkTotal(curT),tp=compT?gfTkTotal(compT):null;
+    const dT=tp&&tp.t>0&&tc.t>0?(tc.t/tp.t-1)*100:null;
+    let mx=-1,mn=-1;curT.forEach((b,i)=>{if(!b.q)return;if(mx<0||b.v>curT[mx].v)mx=i;if(mn<0||b.v<curT[mn].v)mn=i;});
+    document.getElementById('gf-kpis').innerHTML+=
+      '<div class="kpi"><div class="kpi-label">Ticket médio</div><div class="kpi-val">'+(tc.q?brl2(tc.t):'—')+'</div><div class="kpi-sub">'+fv(dT)+'</div></div>'+
+      '<div class="kpi"><div class="kpi-label">Maior ticket</div><div class="kpi-val">'+(mx>=0?brl2(curT[mx].v):'—')+'</div><div class="kpi-sub">'+(mx>=0?'<span class="pill neu">'+labels[mx]+'</span>':'')+'</div></div>'+
+      '<div class="kpi"><div class="kpi-label">Menor ticket</div><div class="kpi-val">'+(mn>=0?brl2(curT[mn].v):'—')+'</div><div class="kpi-sub">'+(mn>=0?'<span class="pill neu">'+labels[mn]+'</span>':'')+'</div></div>'+
+      '<div class="kpi"><div class="kpi-label">Vendas (cupons)</div><div class="kpi-val">'+(tc.q?tc.q.toLocaleString('pt-BR'):'—')+'</div><div class="kpi-sub"><span class="pill neu">base do ticket</span></div></div>';
+  }
   const nome=s=>MES_ABR[parseInt(s.split('-')[1])-1]+'/'+s.split('-')[0];
   const txtPer=rg.kind==='m'?nome(rg.a)+' a '+nome(rg.b):gfBR(rg.ds)+' a '+gfBR(days.length?days[days.length-1]:rg.de);
   const txtCmp=cdays&&cdays.length?' · comparado a '+(rg.kind==='m'&&GF.cmp==='ano'?'mesmo período de '+(parseInt(rg.ds.slice(0,4))-1):gfBR(cdays[0])+' a '+gfBR(cdays[cdays.length-1])):'';
@@ -3844,6 +3967,9 @@ function renderGraficos(){
     });
     ctx.restore();
   }};
+  gfChartTicket(labels,curT,compT,cmpNome,grp,txtPer+txtCmp+' · vendas ÷ quantidade (dias sem quantidade confiável ficam de fora)');
+  gfChartTkQtd(labels,curT,grp);
+  gfChartTkSemana(days,cdays,mapE,mapQ,cmpNome);
   gfChartQtd(labels,curQ,compQ,cmpNome,grp,txtPer+txtCmp);
   destroyChart('ch-gv1');
   const wrap=document.getElementById('wrap-ch-gv1');
