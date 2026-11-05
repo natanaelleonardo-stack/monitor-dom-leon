@@ -3760,7 +3760,7 @@ function gfChartQtd(labels,curQ,compQ,cmpNome,grp,subTxt){
   dsets.push({label:'Período',data:dsCur,backgroundColor:'#4A3728',borderRadius:4,order:2,labColor:'#fff'});
   const fmt=v=>Math.round(v).toLocaleString('pt-BR');
   const plug={id:'gfLabelsQ',afterDatasetsDraw(c){
-    if(grp==='dia')return;
+    if(grp==='dia'&&c.data.labels.length>10)return;
     const ctx=c.ctx;ctx.save();ctx.font='600 11px Inter';
     c.data.datasets.forEach((d,i)=>{
       c.getDatasetMeta(i).data.forEach((b,j)=>{
@@ -3782,7 +3782,7 @@ function gfChartQtd(labels,curQ,compQ,cmpNome,grp,subTxt){
 
 // ── TICKET MÉDIO (vendas ÷ quantidade) ───────────────────
 // dias com quantidade não confiável ficam fora do cálculo
-function gfQtdExcl(d){return (d>='2024-12-17'&&d<='2024-12-31')||(d>='2025-01-11'&&d<='2025-01-15')||d==='2026-11-02';}
+function gfQtdExcl(d){return (d>='2024-12-17'&&d<='2024-12-31')||(d>='2025-01-11'&&d<='2025-01-15');}
 function gfTkBuckets(days,grp,mapE,mapQ){
   const keys=[],agg={};
   days.forEach(d=>{
@@ -3797,7 +3797,7 @@ const brl2=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFra
 function gfMsgVazio(wrap,txt){wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:200px;font-size:13px;color:#9E7A56;text-align:center;padding:0 16px">'+txt+'</div>';}
 function gfLabV(fmt,minH,skipDia,grp){
   return {id:'gfLabT'+Math.random(),afterDatasetsDraw(c){
-    if(skipDia&&grp==='dia')return;
+    if(skipDia&&grp==='dia'&&c.data.labels.length>10)return;
     const ctx=c.ctx;ctx.save();ctx.font='600 11px Inter';
     c.data.datasets.forEach((d,i)=>{
       if(d.type==='line')return;
@@ -3876,6 +3876,8 @@ function renderGraficos(){
   if(!pnl||!pnl.classList.contains('on'))return;
   const hoje=todayLocal();
   const rg=gfRange();
+  {const sc=document.getElementById('gf-cmp');if(sc&&sc.value!==GF.cmp)sc.value=GF.cmp;
+   const cm=document.getElementById('gf-meta');if(cm)cm.checked=!!GF.meta;const ca=document.getElementById('gf-avg');if(ca)ca.checked=!!GF.avg;}
   if(GF.per!=='custom'){
     document.getElementById('gf-de').value=rg.ds.slice(0,7);
     document.getElementById('gf-ate').value=rg.de.slice(0,7);
@@ -3919,7 +3921,7 @@ function renderGraficos(){
   const dsCmp=comp?cur.map((b,i)=>comp[i]&&comp[i].n?comp[i].v:null):null;
   const dsMeta=cur.map(b=>b.meta>0?b.meta:null);
   const totCur=R(cur.reduce((s,b)=>s+b.v,0));
-  const totCmp=comp?R(cur.reduce((s,b,i)=>s+(comp[i]?comp[i].v:0),0)):0;
+  const totCmp=comp?R(cur.reduce((s,b,i)=>s+(b.n&&comp[i]?comp[i].v:0),0)):0;
   const dif=comp&&totCmp>0?(totCur/totCmp-1)*100:null;
   const fv=(d)=>d===null?'':'<span class="pill '+(d>=0?'ok':'err')+'">'+(d>=0?'▲ ':'▼ ')+Math.abs(d).toFixed(1).replace('.',',')+'% vs '+(GF.cmp==='ano'?'ano anterior':'período anterior')+'</span>';
   let mxI=-1,mxV=0;cur.forEach((b,i)=>{if(b.n&&b.v>mxV){mxV=b.v;mxI=i;}});
@@ -3934,7 +3936,7 @@ function renderGraficos(){
     '<div class="kpi"><div class="kpi-label">Melhor '+(grp==='mes'?'mês':grp==='sem'?'semana':'dia')+'</div><div class="kpi-val">'+(mxI>=0?brl(mxV):'—')+'</div><div class="kpi-sub">'+(mxI>=0?'<span class="pill neu">'+labels[mxI]+'</span>':'')+'</div></div>'+
     '<div class="kpi"><div class="kpi-label">Atingimento da meta</div><div class="kpi-val '+(ating===null?'':ating>=100?'ok':'err')+'">'+(ating===null?'—':ating+'%')+'</div><div class="kpi-sub"><span class="pill neu">'+(ating===null?'sem meta no período':'sobre o realizado')+'</span></div></div>';
   {
-    const tc=gfTkTotal(curT),tp=compT?gfTkTotal(compT):null;
+    const tc=gfTkTotal(curT),tp=compT?gfTkTotal(compT.filter((b,i)=>curT[i]&&curT[i].q)):null;
     const dT=tp&&tp.t>0&&tc.t>0?(tc.t/tp.t-1)*100:null;
     let mx=-1,mn=-1;curT.forEach((b,i)=>{if(!b.q)return;if(mx<0||b.v>curT[mx].v)mx=i;if(mn<0||b.v<curT[mn].v)mn=i;});
     document.getElementById('gf-kpis').innerHTML+=
@@ -3955,7 +3957,7 @@ function renderGraficos(){
   if(GF.meta&&dsMeta.some(v=>v))dsets.push({type:'line',label:'Meta',data:dsMeta,borderColor:'#C0392B',borderDash:[6,4],borderWidth:2,pointRadius:grp==='dia'?0:4,pointBackgroundColor:'#C0392B',spanGaps:true,order:1});
   const brl0=v=>'R$ '+Math.round(v).toLocaleString('pt-BR');
   const plug={id:'gfLabels',afterDatasetsDraw(c){
-    if(gfGrpAtual==='dia')return;
+    if(gfGrpAtual==='dia'&&c.data.labels.length>10)return;
     const ctx=c.ctx;ctx.save();ctx.font='600 11px Inter';
     c.data.datasets.forEach((d,i)=>{
       if(d.type==='line')return;
