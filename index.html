@@ -137,6 +137,16 @@ tbody tr.sun td:first-child{color:var(--err);font-weight:600}
 .fbtn.ok-btn{background:var(--ok);color:#fff;border-color:var(--ok)}
 .fbtn.ok-btn:hover{background:#1D6B40}
 .fbtn:disabled{opacity:.5;cursor:not-allowed}
+.qbox{margin-bottom:10px;max-width:640px}
+.qh,.qln{display:grid;grid-template-columns:96px 1fr 1fr 90px;gap:10px;align-items:center;margin-bottom:8px}
+.qh{font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.qln b{font-weight:500;font-size:13px}
+.qln input{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;color:var(--text);background:var(--bg);outline:none}
+.qln input:focus{border-color:var(--br)}
+.qln input.qq{border-color:var(--br-l);background:#FFFBF4}
+.qtk{font-size:12px;color:var(--muted);text-align:right}
+.qcomp .qh,.qcomp .qln{grid-template-columns:78px 1fr 70px}.qcomp .qtk{display:none}
+@media(max-width:520px){.qh,.qln{grid-template-columns:78px 1fr 70px}.qtk{display:none}}
 .e-preview{font-size:12px;color:var(--br);font-weight:600;margin-bottom:8px;min-height:18px}
 .empty{text-align:center;padding:28px;color:var(--muted);font-size:13px}
 
@@ -707,15 +717,14 @@ select option{font-weight:400;color:#1A1210}
         <div class="pfrow" style="max-width:200px;margin-bottom:12px">
           <div class="pfg"><label>Data</label><input type="date" id="pe-data"></div>
         </div>
-        <div class="pfrow c3">
-          <div class="pfg"><label>A prazo</label><input type="number" id="pe-prazo" placeholder="0,00" step="0.01"></div>
-          <div class="pfg"><label>Cortesia</label><input type="number" id="pe-cortesia" placeholder="0,00" step="0.01"></div>
-          <div class="pfg"><label>Crédito</label><input type="number" id="pe-credito" placeholder="0,00" step="0.01"></div>
-        </div>
-        <div class="pfrow c3">
-          <div class="pfg"><label>Débito</label><input type="number" id="pe-debito" placeholder="0,00" step="0.01"></div>
-          <div class="pfg"><label>Dinheiro</label><input type="number" id="pe-dinheiro" placeholder="0,00" step="0.01"></div>
-          <div class="pfg"><label>Pix / QR</label><input type="number" id="pe-pix" placeholder="0,00" step="0.01"></div>
+        <div class="qbox qcomp">
+<div class="qh"><span>Forma</span><span>Valor (R$)</span><span>Qtde vendas</span><span class="qtk">Ticket</span></div>
+<div class="qln"><b>A prazo</b><input type="number" id="pe-prazo" placeholder="0,00" step="0.01"><input type="number" id="pe-q-prazo" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="pe-t-prazo"></span></div>
+<div class="qln"><b>Cortesia</b><input type="number" id="pe-cortesia" placeholder="0,00" step="0.01"><input type="number" id="pe-q-cortesia" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="pe-t-cortesia"></span></div>
+<div class="qln"><b>Crédito</b><input type="number" id="pe-credito" placeholder="0,00" step="0.01"><input type="number" id="pe-q-credito" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="pe-t-credito"></span></div>
+<div class="qln"><b>Débito</b><input type="number" id="pe-debito" placeholder="0,00" step="0.01"><input type="number" id="pe-q-debito" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="pe-t-debito"></span></div>
+<div class="qln"><b>Dinheiro</b><input type="number" id="pe-dinheiro" placeholder="0,00" step="0.01"><input type="number" id="pe-q-dinheiro" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="pe-t-dinheiro"></span></div>
+<div class="qln"><b>Pix / QR</b><input type="number" id="pe-pix" placeholder="0,00" step="0.01"><input type="number" id="pe-q-pix" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="pe-t-pix"></span></div>
         </div>
         <div class="p-pview" id="pe-preview"></div>
       </div>
@@ -1062,13 +1071,14 @@ select option{font-weight:400;color:#1A1210}
     <div class="form-card">
       <div class="form-title"><i class="ti ti-arrow-bar-to-down"></i> Lançar entradas do dia</div>
       <div class="frow"><div class="fg" style="max-width:200px"><label>Data</label><input type="date" id="e-data"></div></div>
-      <div class="frow">
-        <div class="fg"><label>A prazo (R$)</label><input type="number" id="e-prazo" placeholder="0,00" step="0.01"></div>
-        <div class="fg"><label>Cortesia (R$)</label><input type="number" id="e-cortesia" placeholder="0,00" step="0.01"></div>
-        <div class="fg"><label>Crédito (R$)</label><input type="number" id="e-credito" placeholder="0,00" step="0.01"></div>
-        <div class="fg"><label>Débito (R$)</label><input type="number" id="e-debito" placeholder="0,00" step="0.01"></div>
-        <div class="fg"><label>Dinheiro (R$)</label><input type="number" id="e-dinheiro" placeholder="0,00" step="0.01"></div>
-        <div class="fg"><label>Pix / QRCode (R$)</label><input type="number" id="e-pix" placeholder="0,00" step="0.01"></div>
+      <div class="qbox">
+<div class="qh"><span>Forma</span><span>Valor (R$)</span><span>Qtde vendas</span><span class="qtk">Ticket</span></div>
+<div class="qln"><b>A prazo</b><input type="number" id="e-prazo" placeholder="0,00" step="0.01"><input type="number" id="e-q-prazo" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="e-t-prazo"></span></div>
+<div class="qln"><b>Cortesia</b><input type="number" id="e-cortesia" placeholder="0,00" step="0.01"><input type="number" id="e-q-cortesia" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="e-t-cortesia"></span></div>
+<div class="qln"><b>Crédito</b><input type="number" id="e-credito" placeholder="0,00" step="0.01"><input type="number" id="e-q-credito" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="e-t-credito"></span></div>
+<div class="qln"><b>Débito</b><input type="number" id="e-debito" placeholder="0,00" step="0.01"><input type="number" id="e-q-debito" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="e-t-debito"></span></div>
+<div class="qln"><b>Dinheiro</b><input type="number" id="e-dinheiro" placeholder="0,00" step="0.01"><input type="number" id="e-q-dinheiro" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="e-t-dinheiro"></span></div>
+<div class="qln"><b>Pix / QR</b><input type="number" id="e-pix" placeholder="0,00" step="0.01"><input type="number" id="e-q-pix" placeholder="0" step="1" min="0" class="qq"><span class="qtk" id="e-t-pix"></span></div>
       </div>
       <div class="e-preview" id="e-preview"></div>
       <div class="fbtn-row">
@@ -1755,7 +1765,7 @@ saveEdit = async() => {
         debito: R(parseFloat(document.getElementById('ed-debito').value)||0),
         dinheiro: R(parseFloat(document.getElementById('ed-dinheiro').value)||0),
         pix: R(parseFloat(document.getElementById('ed-pix').value)||0),
-      });
+      },{merge:true});
       toast('Lançamento atualizado!');
     } else if(tipo==='conta'){
       const c = ST.contas.find(x=>x.id===id);
@@ -1922,15 +1932,44 @@ savePopupSaida = async() => {
   toast(meses>1?meses+' meses lançados!':psMod==='avista'?'Saída registrada!':'Saída e conta a pagar registradas!');
 };
 
+
+// ── ENTRADA: valor + quantidade por forma de pagamento ──
+const ENT_CAMPOS=['prazo','cortesia','credito','debito','dinheiro','pix'];
+function entLer(pf,d){
+  const obj={data:d};let nq=0,tq=0;
+  ENT_CAMPOS.forEach(f=>{
+    obj[f]=R(parseFloat(document.getElementById(pf+'-'+f).value)||0);
+    const qv=document.getElementById(pf+'-q-'+f).value;
+    if(qv!==''){const n=Math.max(0,parseInt(qv)||0);obj['qtd_'+f]=n;tq+=n;nq++;}
+  });
+  if(nq>0)obj.qtd=tq; // total do dia = soma das formas preenchidas
+  return obj;
+}
+function entPreview(pf,elId){
+  let T=0,N=0;
+  ENT_CAMPOS.forEach(f=>{
+    const v=R(parseFloat(document.getElementById(pf+'-'+f).value)||0),n=parseInt(document.getElementById(pf+'-q-'+f).value)||0;
+    T+=v;N+=n;
+    const t=document.getElementById(pf+'-t-'+f);if(t)t.textContent=(v>0&&n>0)?brl(v/n):'';
+  });
+  const el=document.getElementById(elId);
+  if(el)el.textContent=T>0?'Total: '+brl(T)+(N>0?'  ·  Vendas: '+N.toLocaleString('pt-BR')+'  ·  Ticket médio: '+brl(T/N):''):'';
+}
+function entLimpar(pf,elId){
+  ENT_CAMPOS.forEach(f=>{document.getElementById(pf+'-'+f).value='';document.getElementById(pf+'-q-'+f).value='';});
+  entPreview(pf,elId);document.getElementById(elId).textContent='';
+}
+function entBind(pf,elId){
+  ENT_CAMPOS.forEach(f=>['','q-'].forEach(x=>safeOn(pf+'-'+x+f,'input',()=>entPreview(pf,elId))));
+}
+
 savePopupEntrada = async() => {
   const d = document.getElementById('pe-data').value;
   if(!d){toast('Informe a data.',true);return;}
-  const campos = ['prazo','cortesia','credito','debito','dinheiro','pix'];
-  const obj = {data:d};
-  campos.forEach(f=>{obj[f]=R(parseFloat(document.getElementById('pe-'+f).value)||0);});
+  const obj = entLer('pe',d);
   setSyncStatus('loading');
   document.getElementById('btn-pe').disabled = true;
-  await setDoc(doc(db,'entradas',d), obj);
+  await setDoc(doc(db,'entradas',d), obj, {merge:true});
   document.getElementById('btn-pe').disabled = false;
   clearPopupEntrada();
   closePopup();
@@ -1958,18 +1997,10 @@ clearPopupSaida = () => {
 clearPopupEntrada = () => {
   const hj = todayLocal();
   document.getElementById('pe-data').value = hj;
-  ['pe-prazo','pe-cortesia','pe-credito','pe-debito','pe-dinheiro','pe-pix'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('pe-preview').textContent = '';
+  entLimpar('pe','pe-preview');
 };
 
-['pe-prazo','pe-cortesia','pe-credito','pe-debito','pe-dinheiro','pe-pix'].forEach(id=>{
-  safeOn(id,'input',()=>{
-    const ids=['pe-prazo','pe-cortesia','pe-credito','pe-debito','pe-dinheiro','pe-pix'];
-    const tot=ids.reduce((a,i)=>a+R(parseFloat(document.getElementById(i).value)||0),0);
-    const el=document.getElementById('pe-preview');
-    if(el)el.textContent=tot>0?'Total: '+brl(tot):'';
-  });
-});
+entBind('pe','pe-preview');
 
 // ── EXIBIR/OCULTAR SENHA ──────────────────────────────────
 toggleSenha = () => {
@@ -4125,12 +4156,10 @@ clearSaidaUnificada=()=>{
 saveEntrada=async()=>{
   const d=document.getElementById('e-data').value;
   if(!d){toast('Informe a data.',true);return;}
-  const fields=['prazo','cortesia','credito','debito','dinheiro','pix'];
-  const obj={data:d};
-  fields.forEach(f=>{obj[f]=R(parseFloat(document.getElementById('e-'+f).value)||0);});
+  const obj=entLer('e',d);
   setSyncStatus('loading');
   document.getElementById('btn-entrada').disabled=true;
-  await setDoc(doc(db,'entradas',d),obj);
+  await setDoc(doc(db,'entradas',d),obj,{merge:true});
   document.getElementById('btn-entrada').disabled=false;
   clearEntrada();toast('Entrada salva!');
 };
@@ -4290,18 +4319,10 @@ _delSaida=async(id)=>{
 clearEntrada=()=>{
   const hj=todayLocal();
   document.getElementById('e-data').value=hj;
-  ['e-prazo','e-cortesia','e-credito','e-debito','e-dinheiro','e-pix'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('e-preview').textContent='';
+  entLimpar('e','e-preview');
 };
 
-['e-prazo','e-cortesia','e-credito','e-debito','e-dinheiro','e-pix'].forEach(id=>{
-  safeOn(id,'input',()=>{
-    const ids=['e-prazo','e-cortesia','e-credito','e-debito','e-dinheiro','e-pix'];
-    const tot=ids.reduce((a,i)=>a+R(parseFloat(document.getElementById(i).value)||0),0);
-    const el=document.getElementById('e-preview');
-    if(el)el.textContent=tot>0?'Total: '+brl(tot):'';
-  });
-});
+entBind('e','e-preview');
 
 const hoje=new Date();
 const hojeStr=todayLocal();
